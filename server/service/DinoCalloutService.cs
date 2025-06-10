@@ -85,6 +85,32 @@ namespace Server
             return null;
         }
 
+        private bool? CheckRule(
+            System.Collections.Generic.List<string> ruleEntry,
+            string targetRole,
+            string resource,
+            string action,
+            string logContext
+        )
+        {
+            if (ruleEntry != null && ruleEntry.Count >= 4)
+            {
+                // ruleEntry[0] = role, ruleEntry[1] = resource, ruleEntry[2] = action, ruleEntry[3] = permission
+                if (
+                    string.Equals(ruleEntry[0], targetRole, StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(ruleEntry[1], resource, StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(ruleEntry[2], action, StringComparison.OrdinalIgnoreCase)
+                )
+                {
+                    _logger.LogInformation(
+                        $"EvaluateAccess: {logContext}. Resource='{resource}', Action='{action}'. Rule='[{string.Join(", ", ruleEntry)}]'. Permission='{ruleEntry[3]}'."
+                    );
+                    return string.Equals(ruleEntry[3], "ALLOW", StringComparison.OrdinalIgnoreCase);
+                }
+            }
+            return null; // No match for this rule
+        }
+
         private async Task<Boolean> EvaluateAccess(string subject, string resource, string action)
         {
             GsheetData rules = await _rds.GetAccessControlRules();
@@ -98,43 +124,37 @@ namespace Server
                 {
                     foreach (var ruleEntry in rules.Values)
                     {
-                        bool? allowed = CheckRule(ruleEntry, role, resource, action, _logger, $"Specific role match. Role='{role}'");
-                        if (allowed.HasValue) return allowed.Value;
+                        bool? allowed = CheckRule(
+                            ruleEntry,
+                            role,
+                            resource,
+                            action,
+                            $"Specific role match. Role='{role}'"
+                        );
+                        if (allowed.HasValue)
+                            return allowed.Value;
                     }
                 }
 
                 // Second pass: fallback to "any" role match
                 foreach (var ruleEntry in rules.Values)
                 {
-                    bool? allowed = CheckRule(ruleEntry, "any", resource, action, _logger, "'any' role match");
-                    if (allowed.HasValue) return allowed.Value;
+                    bool? allowed = CheckRule(
+                        ruleEntry,
+                        "any",
+                        resource,
+                        action,
+                        "'any' role match"
+                    );
+                    if (allowed.HasValue)
+                        return allowed.Value;
                 }
             }
 
             _logger.LogInformation(
                 $"EvaluateAccess: No matching rule found. Role='{role ?? "null"}', Resource='{resource}', Action='{action}'. Denying access."
             );
-            return false; // Default to false (deny) if no rule is matched
-        }
-
-        private static bool? CheckRule(System.Collections.Generic.List<string> ruleEntry, string targetRole, string resource, string action, ILogger logger, string logContext)
-        {
-            if (ruleEntry != null && ruleEntry.Count >= 4)
-            {
-                // ruleEntry[0] = role, ruleEntry[1] = resource, ruleEntry[2] = action, ruleEntry[3] = permission
-                if (
-                    string.Equals(ruleEntry[0], targetRole, StringComparison.OrdinalIgnoreCase) &&
-                    string.Equals(ruleEntry[1], resource, StringComparison.OrdinalIgnoreCase) &&
-                    string.Equals(ruleEntry[2], action, StringComparison.OrdinalIgnoreCase)
-                )
-                {
-                    logger.LogInformation(
-                        $"EvaluateAccess: {logContext}. Resource='{resource}', Action='{action}'. Rule='[{string.Join(", ", ruleEntry)}]'. Permission='{ruleEntry[3]}'."
-                    );
-                    return string.Equals(ruleEntry[3], "ALLOW", StringComparison.OrdinalIgnoreCase);
-                }
-            }
-            return null; // No match for this rule
+            return false;
         }
 
         public override Task<MessageContext> ProcessMessage(
@@ -144,17 +164,6 @@ namespace Server
         {
             _logger.LogInformation($"> ProcessMessage");
 
-            string agent = null;
-            // Access headers using the correct property name 'Headers' and appropriate methods
-            if (
-                msgCtxt.Request != null
-                && msgCtxt.Request.Headers.TryGetValue("user-agent", out var userAgentStrings)
-            )
-            {
-                agent = userAgentStrings.Strings_.FirstOrDefault();
-            }
-            _logger.LogInformation($"> ProcessMessage user-agent: {agent}");
-
             if (msgCtxt.Request != null)
             {
                 // Add or update header using the indexer
@@ -163,6 +172,12 @@ namespace Server
                     Strings_ = { DateTime.UtcNow.ToString("o") },
                 };
             }
+
+            var subject = msgCtxt.AdditionalFlowVariables["accesscontrol.subject"];
+            var action = msgCtxt.Request.Verb;
+            var resource = msgCtxt.Request.Uri;
+            // AI! call EvaluateAccess(subject, resource, action), set isAllowed to the boolean result
+            msgCtxt.AdditionalFlowVariables["accesscontrol.result"] = isAllowed ? "ALLOW" : "DENY";
             return Task.FromResult(msgCtxt);
         }
     }
