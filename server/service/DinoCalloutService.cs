@@ -157,7 +157,7 @@ namespace Server
             return false;
         }
 
-        public override Task<MessageContext> ProcessMessage(
+        public override async Task<MessageContext> ProcessMessage(
             MessageContext msgCtxt,
             ServerCallContext context
         )
@@ -176,9 +176,9 @@ namespace Server
             var subject = msgCtxt.AdditionalFlowVariables["accesscontrol.subject"];
             var action = msgCtxt.Request.Verb;
             var resource = msgCtxt.Request.Uri;
-            // AI! call EvaluateAccess(subject, resource, action), set isAllowed to the boolean result
+            bool isAllowed = await EvaluateAccess(subject, resource, action);
             msgCtxt.AdditionalFlowVariables["accesscontrol.result"] = isAllowed ? "ALLOW" : "DENY";
-            return Task.FromResult(msgCtxt);
+            return msgCtxt;
         }
     }
 }
