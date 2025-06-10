@@ -15,6 +15,7 @@ namespace ExternalCalloutDemo
             {
                 var builder = WebApplication.CreateBuilder(args);
                 builder.Services.AddGrpc();
+                builder.Services.AddMemoryCache();
 
                 var app = builder.Build();
                 app.MapGrpcService<DinoCalloutService>();

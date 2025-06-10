@@ -29,18 +29,28 @@ namespace Server
             //_httpClientFactory = httpClientFactory;
         }
 
-        private Task<Boolean> EvaluateAccess(string subject, string resource, string action)
+        private String ResolveRole(GsheetData roles, String subject)
         {
+            // TODO: implement this
+            return "foo";
+        }
+
+        private async Task<Boolean> EvaluateAccess(string subject, string resource, string action)
+        {
+            GsheetData rules = await _rds.GetAccessControlRules();
+            GsheetData roles = await _rds.GetRoles();
+
+            String role = ResolveRole(roles, subject);
+
             return Task.FromResult(true);
         }
 
-        public override async Task<MessageContext> ProcessMessage(
+        public override Task<MessageContext> ProcessMessage(
             MessageContext msgCtxt,
             ServerCallContext context
         )
         {
             _logger.LogInformation($"> ProcessMessage");
-            AccessControlRules rules = await _rds.GetAccessControlRules();
 
             string agent = null;
             // Access headers using the correct property name 'Headers' and appropriate methods
