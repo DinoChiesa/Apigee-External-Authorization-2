@@ -31,8 +31,7 @@ namespace Server
 
         private Task<Boolean> EvaluateAccess(string subject, string resource, string action)
         {
-            // AI! modify this so that it returns a Task<Boolean>
-            return Boolean.true;
+            return Task.FromResult(true);
         }
 
         public override async Task<MessageContext> ProcessMessage(
