@@ -93,78 +93,21 @@ namespace Server
 
             if (rules?.Values != null)
             {
-                // AI! Consolidate the common logic here; perhaps extract it into a local lambda function,
-                // or if more appropriate, into a private static class method.
-
                 // First pass: check for specific role match
                 if (role != null)
                 {
                     foreach (var ruleEntry in rules.Values)
                     {
-                        if (ruleEntry != null && ruleEntry.Count >= 4)
-                        {
-                            // ruleEntry[0] = role, ruleEntry[1] = resource, ruleEntry[2] = action, ruleEntry[3] = permission
-                            if (
-                                string.Equals(
-                                    ruleEntry[0],
-                                    role,
-                                    StringComparison.OrdinalIgnoreCase
-                                )
-                                && string.Equals(
-                                    ruleEntry[1],
-                                    resource,
-                                    StringComparison.OrdinalIgnoreCase
-                                )
-                                && string.Equals(
-                                    ruleEntry[2],
-                                    action,
-                                    StringComparison.OrdinalIgnoreCase
-                                )
-                            )
-                            {
-                                _logger.LogInformation(
-                                    $"EvaluateAccess: Specific role match. Role='{role}', Resource='{resource}', Action='{action}'. Rule='[{string.Join(", ", ruleEntry)}]'. Permission='{ruleEntry[3]}'."
-                                );
-                                return string.Equals(
-                                    ruleEntry[3],
-                                    "ALLOW",
-                                    StringComparison.OrdinalIgnoreCase
-                                );
-                            }
-                        }
+                        bool? allowed = CheckRule(ruleEntry, role, resource, action, _logger, $"Specific role match. Role='{role}'");
+                        if (allowed.HasValue) return allowed.Value;
                     }
                 }
 
                 // Second pass: fallback to "any" role match
                 foreach (var ruleEntry in rules.Values)
                 {
-                    if (ruleEntry != null && ruleEntry.Count >= 4)
-                    {
-                        // ruleEntry[0] = role, ruleEntry[1] = resource, ruleEntry[2] = action, ruleEntry[3] = permission
-                        if (
-                            string.Equals(ruleEntry[0], "any", StringComparison.OrdinalIgnoreCase)
-                            && string.Equals(
-                                ruleEntry[1],
-                                resource,
-                                StringComparison.OrdinalIgnoreCase
-                            )
-                            && string.Equals(
-                                ruleEntry[2],
-                                action,
-                                StringComparison.OrdinalIgnoreCase
-                            )
-                        )
-                        {
-                            _logger.LogInformation(
-                                $"EvaluateAccess: 'any' role match. Resource='{resource}', Action='{action}'. Rule='[{string.Join(", ", ruleEntry)}]'. Permission='{ruleEntry[3]}'."
-                            );
-                            return string.Equals(
-                                ruleEntry[3],
-                                "ALLOW",
-                                StringComparison.OrdinalIgnoreCase
-                            );
-                        }
-                    }
+                    bool? allowed = CheckRule(ruleEntry, "any", resource, action, _logger, "'any' role match");
+                    if (allowed.HasValue) return allowed.Value;
                 }
             }
 
@@ -172,6 +115,26 @@ namespace Server
                 $"EvaluateAccess: No matching rule found. Role='{role ?? "null"}', Resource='{resource}', Action='{action}'. Denying access."
             );
             return false; // Default to false (deny) if no rule is matched
+        }
+
+        private static bool? CheckRule(System.Collections.Generic.List<string> ruleEntry, string targetRole, string resource, string action, ILogger logger, string logContext)
+        {
+            if (ruleEntry != null && ruleEntry.Count >= 4)
+            {
+                // ruleEntry[0] = role, ruleEntry[1] = resource, ruleEntry[2] = action, ruleEntry[3] = permission
+                if (
+                    string.Equals(ruleEntry[0], targetRole, StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(ruleEntry[1], resource, StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(ruleEntry[2], action, StringComparison.OrdinalIgnoreCase)
+                )
+                {
+                    logger.LogInformation(
+                        $"EvaluateAccess: {logContext}. Resource='{resource}', Action='{action}'. Rule='[{string.Join(", ", ruleEntry)}]'. Permission='{ruleEntry[3]}'."
+                    );
+                    return string.Equals(ruleEntry[3], "ALLOW", StringComparison.OrdinalIgnoreCase);
+                }
+            }
+            return null; // No match for this rule
         }
 
         public override Task<MessageContext> ProcessMessage(
