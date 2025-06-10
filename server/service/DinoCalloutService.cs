@@ -89,9 +89,48 @@ namespace Server
         {
             GsheetData rules = await _rds.GetAccessControlRules();
             GsheetData roles = await _rds.GetRoles();
-            String role = ResolveRole(roles, subject);
+            String role = ResolveRole(roles, subject); // role can be null if not found
 
-            return Task.FromResult(true);
+            if (rules?.Values != null)
+            {
+                // First pass: check for specific role match
+                if (role != null)
+                {
+                    foreach (var ruleEntry in rules.Values)
+                    {
+                        if (ruleEntry != null && ruleEntry.Count >= 4)
+                        {
+                            // ruleEntry[0] = role, ruleEntry[1] = resource, ruleEntry[2] = action, ruleEntry[3] = permission
+                            if (string.Equals(ruleEntry[0], role, StringComparison.OrdinalIgnoreCase) &&
+                                string.Equals(ruleEntry[1], resource, StringComparison.OrdinalIgnoreCase) &&
+                                string.Equals(ruleEntry[2], action, StringComparison.OrdinalIgnoreCase))
+                            {
+                                _logger.LogInformation($"EvaluateAccess: Specific role match. Role='{role}', Resource='{resource}', Action='{action}'. Rule='[{string.Join(", ", ruleEntry)}]'. Permission='{ruleEntry[3]}'.");
+                                return string.Equals(ruleEntry[3], "ALLOW", StringComparison.OrdinalIgnoreCase);
+                            }
+                        }
+                    }
+                }
+
+                // Second pass: fallback to "any" role match
+                foreach (var ruleEntry in rules.Values)
+                {
+                    if (ruleEntry != null && ruleEntry.Count >= 4)
+                    {
+                        // ruleEntry[0] = role, ruleEntry[1] = resource, ruleEntry[2] = action, ruleEntry[3] = permission
+                        if (string.Equals(ruleEntry[0], "any", StringComparison.OrdinalIgnoreCase) &&
+                            string.Equals(ruleEntry[1], resource, StringComparison.OrdinalIgnoreCase) &&
+                            string.Equals(ruleEntry[2], action, StringComparison.OrdinalIgnoreCase))
+                        {
+                            _logger.LogInformation($"EvaluateAccess: 'any' role match. Resource='{resource}', Action='{action}'. Rule='[{string.Join(", ", ruleEntry)}]'. Permission='{ruleEntry[3]}'.");
+                            return string.Equals(ruleEntry[3], "ALLOW", StringComparison.OrdinalIgnoreCase);
+                        }
+                    }
+                }
+            }
+
+            _logger.LogInformation($"EvaluateAccess: No matching rule found. Role='{role ?? "null"}', Resource='{resource}', Action='{action}'. Denying access.");
+            return false; // Default to false (deny) if no rule is matched
         }
 
         public override Task<MessageContext> ProcessMessage(
