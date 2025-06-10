@@ -32,10 +32,10 @@ namespace Server
 
         private String ResolveRole(GsheetData roles, String subject)
         {
-            if (roles?.values != null)
+            if (roles?.Values != null)
             {
                 // First pass: check for exact matches
-                foreach (var entry in roles.values)
+                foreach (var entry in roles.Values)
                 {
                     if (entry != null && entry.Count >= 2)
                     {
@@ -43,14 +43,16 @@ namespace Server
                         string role = entry[1];
                         if (pattern == subject)
                         {
-                            _logger.LogInformation($"ResolveRole: Exact match for subject '{subject}' found role '{role}'.");
+                            _logger.LogInformation(
+                                $"ResolveRole: Exact match for subject '{subject}' found role '{role}'."
+                            );
                             return role;
                         }
                     }
                 }
 
                 // Second pass: check for domain matches
-                foreach (var entry in roles.values)
+                foreach (var entry in roles.Values)
                 {
                     if (entry != null && entry.Count >= 2)
                     {
@@ -63,24 +65,30 @@ namespace Server
                             // Escape the domain part for regex and construct the regex pattern
                             // e.g. *@foo.com -> [^@]+@foo\.com
                             string regexPattern = $"^[^@]+@{Regex.Escape(domain.Substring(1))}$";
-                            if (subject.Contains("@") && Regex.IsMatch(subject, regexPattern, RegexOptions.IgnoreCase))
+                            if (
+                                subject.Contains("@")
+                                && Regex.IsMatch(subject, regexPattern, RegexOptions.IgnoreCase)
+                            )
                             {
-                                _logger.LogInformation($"ResolveRole: Domain match for subject '{subject}' with pattern '{pattern}' found role '{role}'.");
+                                _logger.LogInformation(
+                                    $"ResolveRole: Domain match for subject '{subject}' with pattern '{pattern}' found role '{role}'."
+                                );
                                 return role;
                             }
                         }
                     }
                 }
             }
-            _logger.LogInformation($"ResolveRole: No specific role found for subject '{subject}'. Returning 'any'.");
-            return "any";
+            _logger.LogInformation(
+                $"ResolveRole: No specific role found for subject '{subject}'. Returning null."
+            );
+            return null;
         }
 
         private async Task<Boolean> EvaluateAccess(string subject, string resource, string action)
         {
             GsheetData rules = await _rds.GetAccessControlRules();
             GsheetData roles = await _rds.GetRoles();
-
             String role = ResolveRole(roles, subject);
 
             return Task.FromResult(true);
