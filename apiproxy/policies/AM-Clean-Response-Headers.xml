@@ -1,0 +1,35 @@
+<AssignMessage name='AM-Clean-Response-Headers'>
+  <Remove>
+    <Headers>
+      <Header name='X-Robots-Tag'/>
+      <Header name='Cache-Control'/>
+      <Header name='Pragma'/>
+      <Header name='Expires'/>
+      <Header name='P3P'/>
+      <Header name='Content-Security-Policy'/>
+      <Header name='X-Content-Type-Options'/>
+      <Header name='X-XSS-Protection'/>
+      <Header name='Server'/>
+      <Header name='Set-Cookie'/>
+      <Header name='Accept-Ranges'/>
+      <Header name='Vary'/>
+      <Header name='Content-Disposition'/>
+      <Header name='x-cloud-trace-context'/>
+      <Header name='x-forwarded-for'/>
+      <Header name='x-forwarded-for'/>
+      <Header name='x-forwarded-for'/>
+      <Header name='x-forwarded-proto'/>
+      <!-- mTLS headers passed by the load balancer -->
+      <Header name='x-client-cert-chain-verified'/>
+      <Header name='x-client-cert-error'/>
+      <Header name='x-client-cert-present'/>
+      <Header name='x-client-cert-serial'/>
+      <Header name='x-client-cert-subject-b64'/>
+      <Header name='x-client-cert-uri-sans'/>
+      <Header name='x-client-cert-valid-not-after'/>
+      <Header name='x-client-cert-valid-not-before'/>
+      <Header name='x-client-cert-fingerprint'/>
+    </Headers>
+  </Remove>
+  <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
+</AssignMessage>
