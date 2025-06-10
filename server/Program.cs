@@ -16,9 +16,10 @@ namespace ExternalCalloutDemo
                 var builder = WebApplication.CreateBuilder(args);
                 builder.Services.AddGrpc();
                 builder.Services.AddMemoryCache();
+                builder.Services.AddHttpClient();
 
                 var app = builder.Build();
-                app.MapGrpcService<DinoCalloutService>();
+                app.MapGrpcService<AccessControlService>();
 
                 Console.Error.WriteLine($"{SERVICE_NAME} Starting up...");
                 String buildTime = cmdwtf.BuildTimestamp.BuildTimeUtc.ToString(

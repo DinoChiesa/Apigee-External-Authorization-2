@@ -29,30 +29,25 @@ namespace Server
 
         private async Task<GsheetData> FetchAndParseDataFromEndpoint(string sheetRange)
         {
-            // Best practice: Use IHttpClientFactory to create an HttpClient instance.
             var client = _httpClientFactory.CreateClient("MyApiClient");
+            client.BaseAddress = new Uri("https://sheets.googleapis.com");
 
             try
             {
-                // In a real app, these would come from a secure config source.
                 var token = await GetGcpToken();
                 var uriPath = $"/v4/spreadsheets/{SHEET_ID}/values/{sheetRange}";
                 using (var request = new HttpRequestMessage(HttpMethod.Get, uriPath))
                 {
                     request.Headers.Add("Authorization", $"Bearer {token}");
-
                     var response = await client.SendAsync(request);
-
                     if (response.IsSuccessStatusCode)
                     {
                         string jsonContent = await response.Content.ReadAsStringAsync();
                         Console.WriteLine("Request successful. Parsing JSON content.");
-                        // Deserialize the JSON string into our C# object model.
                         return JsonSerializer.Deserialize<GsheetData>(jsonContent);
                     }
                     else
                     {
-                        // Handle non-successful status codes
                         string errorContent = await response.Content.ReadAsStringAsync();
                         Console.WriteLine($"Error: {response.StatusCode} - {errorContent}");
                         return null;

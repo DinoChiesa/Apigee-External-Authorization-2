@@ -14,6 +14,16 @@
 
   <PreFlow name="PreFlow">
     <Request>
+      <Step>
+        <Condition>request.header.access-control = null</Condition>
+        <Name>RF-Invalid-Request</Name>
+      </Step>
+      <Step>
+        <Name>AM-AccessControl-Subject</Name>
+      </Step>
+      <Step>
+        <Name>EC-1</Name>
+      </Step>
     </Request>
     <Response>
       <Step>
@@ -41,9 +51,6 @@
 
     <Flow name="t1">
       <Request>
-        <Step>
-          <Name>EC-1</Name>
-        </Step>
       </Request>
       <Response>
         <Step>

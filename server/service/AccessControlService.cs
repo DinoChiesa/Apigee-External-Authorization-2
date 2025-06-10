@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -10,7 +9,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Server
 {
-    public class DinoCalloutService : ExternalCalloutService.ExternalCalloutServiceBase
+    public class AccessControlService : ExternalCalloutService.ExternalCalloutServiceBase
     {
         private readonly ILogger _logger;
         private readonly IMemoryCache _memoryCache;
@@ -18,13 +17,13 @@ namespace Server
         //private readonly IHttpClientFactory _httpClientFactory;
         private readonly RemoteDataService _rds;
 
-        public DinoCalloutService(
+        public AccessControlService(
             ILoggerFactory loggerFactory,
             IMemoryCache memoryCache,
             IHttpClientFactory httpClientFactory
         )
         {
-            _logger = loggerFactory.CreateLogger<DinoCalloutService>();
+            _logger = loggerFactory.CreateLogger<AccessControlService>();
             _memoryCache = memoryCache;
             _rds = new RemoteDataService(_memoryCache, httpClientFactory);
             //_httpClientFactory = httpClientFactory;
@@ -173,11 +172,13 @@ namespace Server
                 };
             }
 
-            var subject = msgCtxt.AdditionalFlowVariables["accesscontrol.subject"];
+            var subject = msgCtxt.AdditionalFlowVariables["accesscontrol.subject"].String;
             var action = msgCtxt.Request.Verb;
             var resource = msgCtxt.Request.Uri;
             bool isAllowed = await EvaluateAccess(subject, resource, action);
-            msgCtxt.AdditionalFlowVariables["accesscontrol.result"] = isAllowed ? "ALLOW" : "DENY";
+            msgCtxt.AdditionalFlowVariables["accesscontrol.result"].String = isAllowed
+                ? "ALLOW"
+                : "DENY";
             return msgCtxt;
         }
     }

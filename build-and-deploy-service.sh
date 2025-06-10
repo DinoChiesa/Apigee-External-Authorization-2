@@ -87,7 +87,7 @@ check_required_commands() {
 
 example_name="server"
 check_required_commands gcloud grep sed tr
-check_shell_variables PROJECT REGION SERVICE_ROOT 
+check_shell_variables PROJECT REGION SERVICE_ROOT SHEET_ID
 
 # derived variables
 SERVICE_ACCOUNT="${SERVICE_ROOT}"
@@ -113,6 +113,7 @@ echo "gcloud run deploy \"${SERVICE}\" \
   --memory '512Mi' \
   --min-instances 0 \
   --max-instances 1 \
+  --set-env-vars KEY1=VALUE1,KEY2=VALUE2 \
   --allow-unauthenticated \
   --update-build-env-vars=\"GCLOUD_BUILD=1\" \
   --region \"${REGION}\" \
@@ -129,6 +130,7 @@ gcloud run deploy "${SERVICE}" \
   --memory '512Mi' \
   --min-instances 0 \
   --max-instances 1 \
+  --set-env-vars SA_EMAIL="${SA_EMAIL}",PROJECT_ID="$PROJECT",SHEET_ID="${SHEET_ID}" \
   --allow-unauthenticated \
   --update-build-env-vars="GCLOUD_BUILD=1" \
   --region "${REGION}" \
