@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Net.Http;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Apigee.ExternalCallout;
 using Grpc.Core;
@@ -31,8 +32,48 @@ namespace Server
 
         private String ResolveRole(GsheetData roles, String subject)
         {
-            // TODO: implement this
-            return "foo";
+            if (roles?.values != null)
+            {
+                // First pass: check for exact matches
+                foreach (var entry in roles.values)
+                {
+                    if (entry != null && entry.Count >= 2)
+                    {
+                        string pattern = entry[0];
+                        string role = entry[1];
+                        if (pattern == subject)
+                        {
+                            _logger.LogInformation($"ResolveRole: Exact match for subject '{subject}' found role '{role}'.");
+                            return role;
+                        }
+                    }
+                }
+
+                // Second pass: check for domain matches
+                foreach (var entry in roles.values)
+                {
+                    if (entry != null && entry.Count >= 2)
+                    {
+                        string pattern = entry[0];
+                        string role = entry[1];
+
+                        if (pattern.StartsWith("*@"))
+                        {
+                            string domain = pattern.Substring(1); // Remove the '*'
+                            // Escape the domain part for regex and construct the regex pattern
+                            // e.g. *@foo.com -> [^@]+@foo\.com
+                            string regexPattern = $"^[^@]+@{Regex.Escape(domain.Substring(1))}$";
+                            if (subject.Contains("@") && Regex.IsMatch(subject, regexPattern, RegexOptions.IgnoreCase))
+                            {
+                                _logger.LogInformation($"ResolveRole: Domain match for subject '{subject}' with pattern '{pattern}' found role '{role}'.");
+                                return role;
+                            }
+                        }
+                    }
+                }
+            }
+            _logger.LogInformation($"ResolveRole: No specific role found for subject '{subject}'. Returning 'any'.");
+            return "any";
         }
 
         private async Task<Boolean> EvaluateAccess(string subject, string resource, string action)
