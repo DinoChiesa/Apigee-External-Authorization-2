@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package apigee;
 
+option csharp_namespace = "Apigee.ExternalCallout";
+
 import "google/protobuf/descriptor.proto";
 
 option java_package = "com.google.apigee.proto";

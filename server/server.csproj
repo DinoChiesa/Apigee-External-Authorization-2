@@ -5,7 +5,7 @@
 
   <ItemGroup>
     <Protobuf Include="..\proto\external_callout.proto" GrpcServices="Server" Link="proto\external_callout.proto" />
-    <PackageReference Include="Grpc.AspNetCore" />
+    <PackageReference Include="Grpc.AspNetCore" Version="2.60.0" />
   </ItemGroup>
 
 </Project>
