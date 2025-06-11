@@ -1,0 +1,4 @@
+<APIProxy name="ec-access-control">
+  <ConfigurationVersion majorVersion="4" minorVersion="0"/>
+  <DisplayName>ec-access-control</DisplayName>
+</APIProxy>

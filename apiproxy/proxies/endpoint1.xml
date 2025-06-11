@@ -1,7 +1,7 @@
 <ProxyEndpoint name="endpoint1">
 
   <HTTPProxyConnection>
-    <BasePath>/test-ec</BasePath>
+    <BasePath>/ec-access-control</BasePath>
   </HTTPProxyConnection>
 
   <FaultRules/>
@@ -23,6 +23,10 @@
       </Step>
       <Step>
         <Name>EC-1</Name>
+      </Step>
+      <Step>
+        <Condition>accesscontrol.result != "ALLOW"</Condition>
+        <Name>RF-Access-Denied</Name>
       </Step>
     </Request>
     <Response>
@@ -49,7 +53,7 @@
 
   <Flows>
 
-    <Flow name="t1">
+    <Flow name="get-t">
       <Request>
       </Request>
       <Response>
@@ -57,7 +61,18 @@
           <Name>AM-Response</Name>
         </Step>
       </Response>
-      <Condition>proxy.pathsuffix MatchesPath "/t1" and request.verb = "GET"</Condition>
+      <Condition>proxy.pathsuffix ~~ "/t[0-9]+" and request.verb = "GET"</Condition>
+    </Flow>
+
+    <Flow name="post-t">
+      <Request>
+      </Request>
+      <Response>
+        <Step>
+          <Name>AM-Response</Name>
+        </Step>
+      </Response>
+      <Condition>proxy.pathsuffix ~~ "/t[0-9]+" and request.verb = "POST"</Condition>
     </Flow>
 
     <Flow name="unknown request">

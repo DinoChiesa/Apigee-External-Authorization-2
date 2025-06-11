@@ -1,15 +1,15 @@
-<RaiseFault name='RF-Invalid-Request'>
+<RaiseFault name='RF-Access-Denied'>
   <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
   <FaultResponse>
     <Set>
       <Payload contentType='application/json'>{
   "error" : {
-    "code" : 400.01,
-    "message" : "that request was invalid; pass an Access-Control header."
+    "code" : 403.01,
+    "message" : "access denied."
   }
 }
 </Payload>
-      <StatusCode>400</StatusCode>
+      <StatusCode>403</StatusCode>
     </Set>
   </FaultResponse>
 </RaiseFault>
