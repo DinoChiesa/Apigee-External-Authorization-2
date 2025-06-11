@@ -188,8 +188,10 @@ namespace Server
             }
 
             var subject = msgCtxt.AdditionalFlowVariables["accesscontrol.subject"].String;
-            var action = msgCtxt.Request.Verb;
-            var resource = msgCtxt.Request.Uri;
+            var action = msgCtxt.AdditionalFlowVariables["accesscontrol.action"].String;
+            var resource = msgCtxt.AdditionalFlowVariables["accesscontrol.resource"].String;
+            // var action = msgCtxt.Request.Verb;
+            // var resource = msgCtxt.Request.Uri;
             bool isAllowed = await EvaluateAccess(subject, resource, action);
             msgCtxt.AdditionalFlowVariables.Add("accesscontrol.result", new FlowVariable());
             msgCtxt.AdditionalFlowVariables["accesscontrol.result"].String = isAllowed

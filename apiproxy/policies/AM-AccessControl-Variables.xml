@@ -1,0 +1,25 @@
+<AssignMessage name='AM-AccessControl-Variables'>
+  <AssignVariable>
+    <Name>accesscontrol.subject</Name>
+    <Ref>request.header.access-control.1</Ref>
+    <Value>not-set</Value>
+  </AssignVariable>
+  <AssignVariable>
+    <Name>accesscontrol.action</Name>
+    <Ref>request.verb</Ref>
+    <Value>not-set</Value>
+  </AssignVariable>
+  <AssignVariable>
+    <Name>accesscontrol.resource</Name>
+    <Template>{proxy.basepath}{proxy.pathsuffix}</Template>
+    <Value>not-set</Value>
+  </AssignVariable>
+
+  <!-- thw following is not needed if the above is used by the callout -->
+  <AssignVariable>
+    <Name>accesscontrol.uri</Name>
+    <Ref>request.uri</Ref>
+  </AssignVariable>
+
+
+</AssignMessage>

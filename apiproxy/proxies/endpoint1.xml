@@ -19,7 +19,7 @@
         <Name>RF-Invalid-Request</Name>
       </Step>
       <Step>
-        <Name>AM-AccessControl-Subject</Name>
+        <Name>AM-AccessControl-Variables</Name>
       </Step>
       <Step>
         <Name>EC-1</Name>

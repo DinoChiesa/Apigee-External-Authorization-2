@@ -23,10 +23,12 @@
 
   <TimeoutMs>5000</TimeoutMs>
   <Configurations>
+<!--
     <Property name="with.request.content">true</Property>
     <Property name="with.request.headers">true</Property>
     <Property name="with.response.content">true</Property>
     <Property name="with.response.headers">true</Property>
+-->
 
     <!-- all context variables sharing the following prefix will be sent to the callout -->
     <FlowVariable>accesscontrol</FlowVariable>

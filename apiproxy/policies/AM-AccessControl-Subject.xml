@@ -1,7 +1,0 @@
-<AssignMessage name='AM-AccessControl-Subject'>
-  <AssignVariable>
-    <Name>accesscontrol.subject</Name>
-    <Ref>request.header.access-control.1</Ref>
-    <Value>not-set</Value>
-  </AssignVariable>
-</AssignMessage>
