@@ -10,10 +10,6 @@ namespace Server
     {
         private readonly IMemoryCache _memoryCache;
         private readonly IHttpClientFactory _httpClientFactory;
-
-        // the following should be either in an appSettings.json file or from environment
-        private readonly string PROJECT_ID;
-        private readonly string SERVICE_ACCOUNT;
         private readonly string SHEET_ID;
         private const string ACL_RANGE = "Rules!A2:D102";
         private const string ROLES_RANGE = "Roles!A2:B102";
@@ -22,8 +18,6 @@ namespace Server
         {
             _memoryCache = memoryCache;
             _httpClientFactory = httpClientFactory;
-            PROJECT_ID = Environment.GetEnvironmentVariable("SA_EMAIL") ?? "not-set";
-            SERVICE_ACCOUNT = Environment.GetEnvironmentVariable("PROJECT_ID") ?? "not-set";
             SHEET_ID = Environment.GetEnvironmentVariable("SHEET_ID") ?? "not-set";
         }
 
@@ -100,7 +94,7 @@ namespace Server
                 {
                     cacheEntry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(9);
                     Console.WriteLine("Cache miss. Generating a token...");
-                    return await TokenService.LoadGcpAccessTokenAsync(PROJECT_ID, SERVICE_ACCOUNT);
+                    return await TokenService.LoadGcpAccessTokenAsync();
                 }
             );
         }

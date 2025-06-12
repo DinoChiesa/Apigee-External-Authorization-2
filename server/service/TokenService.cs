@@ -12,6 +12,10 @@ public class TokenService
     // In a real application, you would use a logging framework like Serilog or Microsoft.Extensions.Logging
     // For this example, we'll use Console.WriteLine to represent logging.
     static System.IO.TextWriter log = System.Console.Out;
+    static readonly String PROJECT_ID =
+        Environment.GetEnvironmentVariable("PROJECT_ID") ?? "not-set";
+    static readonly String SERVICE_ACCOUNT =
+        Environment.GetEnvironmentVariable("SA_EMAIL") ?? "not-set";
 
     // A single, static HttpClient can be reused for the application's lifetime.
     private static readonly HttpClient httpClient = new HttpClient();
@@ -31,11 +35,8 @@ public class TokenService
     /// If in Cloud Run, it fetches the token from the metadata server.
     /// Otherwise, it uses the local 'gcloud' CLI.
     /// </summary>
-    /// <param name="projectId">The GCP project ID. Required for local execution.</param>
     /// <returns>The access token, or null if it cannot be retrieved.</returns>
     public static async Task<string> LoadGcpAccessTokenAsync(
-        string projectId = null,
-        string serviceAccount = null
     )
     {
         if (IsRunningInCloud())
@@ -86,15 +87,15 @@ public class TokenService
         else
         {
             log.WriteLine("INFO: Not running in Cloud Run, using gcloud CLI for token...");
-            if (string.IsNullOrEmpty(projectId))
+            if (string.IsNullOrEmpty(PROJECT_ID))
             {
-                log.WriteLine("ERROR: Project ID is required for local 'gcloud' token retrieval.");
+                log.WriteLine("ERROR: environment variable PROJECT_ID is required for local 'gcloud' token retrieval.");
                 return null;
             }
-            if (string.IsNullOrEmpty(serviceAccount))
+            if (string.IsNullOrEmpty(SERVICE_ACCOUNT))
             {
                 log.WriteLine(
-                    "ERROR: Service Account ID is required for local 'gcloud' token retrieval."
+                    "ERROR: environment variable SA_EMAIL is required for local 'gcloud' token retrieval."
                 );
                 return null;
             }
@@ -103,9 +104,9 @@ public class TokenService
                 "auth",
                 "print-access-token",
                 "--impersonate-service-account",
-                serviceAccount,
+                SERVICE_ACCOUNT,
                 "--project",
-                projectId,
+                PROJECT_ID,
                 "--quiet"
             );
         }
