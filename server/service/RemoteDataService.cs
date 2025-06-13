@@ -38,6 +38,30 @@ namespace Server
                     {
                         string jsonContent = await response.Content.ReadAsStringAsync();
                         Console.WriteLine("Request successful. Parsing JSON content.");
+
+                        // AI! the data coming back from the remote source looks like this
+                        // {
+                        //   "range": "Rules!A2:D19",
+                        //   "majorDimension": "ROWS",
+                        //   "values": [
+                        //     ["any", "/ec-access-control/t1", "GET", "Allow"],
+                        //     [],
+                        //     ["employee", "/ec-access-control/t2", "GET", "Allow"],
+                        //     [],
+                        //     ["partner", "/ec-access-control/t2", "GET", "Allow"],
+                        //     ["partner", "/ec-access-control/t3", "GET", "Allow"],
+                        //     [],
+                        //     ["any", "/ec-access-control/t1", "POST", "Deny"],
+                        //     ["any", "/ec-access-control/t2", "POST", "Deny"]
+                        //   ]
+                        // }
+                        //
+                        // After deserializing the data into a GSheetData object,
+                        // remove the items from the Values list that are an empty list.
+                        // You may wish to do this with a "Digest()" method on the GSheetData class,
+                        // then the return value here would be
+                        // JsonSerializer.Deserialize<GsheetData>(jsonContent).Digest()
+                        // Or something equivalent. Use your judgment.
                         return JsonSerializer.Deserialize<GsheetData>(jsonContent);
                     }
                     else
