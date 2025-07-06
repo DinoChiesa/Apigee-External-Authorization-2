@@ -17,6 +17,7 @@
 #
 
 PROXY_NAME="ec-access-control"
+TARGET_SERVER_NAME="example-access-control-server"
 
 source ./lib/utils.sh
 
@@ -45,6 +46,7 @@ create_target_server() {
     cat ${CURL_OUT}
   else
     printf "The required Apigee target server exists.\n"
+    cat ${CURL_OUT}
   fi
 }
 
@@ -53,8 +55,8 @@ set_service_hostname() {
   service="$1"
   project="$2"
   printf "Checking for the cloud run service %s...\n" "$service"
-  echo "gcloud run services describe \"${SERVICE}\" --project \"$project\""
-  if gcloud run services describe "${service}" --project "$project" 2>&1; then
+  echo "gcloud run services describe \"${service}\" --project \"$project\""
+  if gcloud run services describe "${service}" --project "$project" >>/dev/null 2>&1; then
     printf "That service exists...\n"
     service_url=$(gcloud run services describe "${service}" --project "$project" --format='value(status.url)')
     SERVICE_HOSTNAME=${service_url#https://}
@@ -69,9 +71,9 @@ set_service_hostname() {
 # ====================================================================
 
 check_shell_variables APIGEE_PROJECT_ID APIGEE_ENV CLOUDRUN_SERVICE_NAME CLOUDRUN_PROJECT_ID
-check_required_commands gcloud curl jq 
+check_required_commands gcloud curl jq
 
 TOKEN=$(gcloud auth print-access-token)
 
 set_service_hostname "$CLOUDRUN_SERVICE_NAME" "$CLOUDRUN_PROJECT_ID"
-create_target_server "example-access-control-server" "$SERVICE_HOSTNAME"
+create_target_server "${TARGET_SERVER_NAME}" "$SERVICE_HOSTNAME"

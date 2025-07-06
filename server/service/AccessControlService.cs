@@ -60,7 +60,7 @@ namespace Server
                     {
                         string pattern = entry[0];
                         string role = entry[1];
-                        _logger.LogInformation(
+                        _logger.LogDebug(
                             $"ResolveRole: Exact match? subject({subject}) pattern({pattern}) role({role})"
                         );
                         if (pattern == subject)
@@ -72,7 +72,7 @@ namespace Server
                         }
                         else
                         {
-                            _logger.LogInformation(
+                            _logger.LogDebug(
                                 $"ResolveRole: Exact match NEGATIVE subject({subject}) pattern({pattern}) role({role})"
                             );
                         }
@@ -105,7 +105,7 @@ namespace Server
                             }
                             else
                             {
-                                _logger.LogInformation(
+                                _logger.LogDebug(
                                     $"ResolveRole: Pattern match NEGATIVE pattern({pattern}) role({role})"
                                 );
                             }
@@ -130,7 +130,7 @@ namespace Server
             if (ruleEntry != null && ruleEntry.Count >= 4)
             {
                 // ruleEntry[0] = role, ruleEntry[1] = resource, ruleEntry[2] = action, ruleEntry[3] = permission
-                _logger.LogInformation(
+                _logger.LogDebug(
                     $"CheckRule: role({ruleEntry[0]}|{targetRole}) rsrc({ruleEntry[1]}|{resource}) action({ruleEntry[2]}|{action})"
                 );
                 if (

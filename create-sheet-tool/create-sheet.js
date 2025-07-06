@@ -132,10 +132,12 @@ async function createSheet() {
     console.log("\nOK\n\n");
 
     console.log(
-      `Later, you will need to share the sheet with the service account email.\n\n`,
+      `Later, you will need to share the sheet with the service account email.`,
     );
     const sheetUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit`;
-    console.log(`To view the data, open this sheet url:\n    ${sheetUrl}`);
+    console.log(
+      `To do so you will need to open this sheet url:\n    ${sheetUrl}`,
+    );
     console.log("\ndone\n\n");
   } catch (e) {
     handleError(e);

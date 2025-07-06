@@ -60,3 +60,4 @@ echo "These are expected to generate an access denied response, using the defaul
 echo "  curl -i -X GET https://${APIGEE_HOST}/${PROXY_NAME}/t4 -H \"Access-Control: person@partner1.org\""
 echo "  curl -i -X GET https://${APIGEE_HOST}/${PROXY_NAME}/t3 -H \"Access-Control: person@example-company.com\""
 echo "  curl -i -X GET https://${APIGEE_HOST}/${PROXY_NAME}/t1 -X POST -d 'hello'  -H \"Access-Control: person@example-company.com\""
+echo " "

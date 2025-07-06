@@ -43,20 +43,20 @@ OAuthV2 model, nothing new there.
 
 But as you can see, whether using a key or a token, the control is binary. Either the
 caller has the valid key or token, or it does not.  If you are managing more than a
-handful of APIs, you want more control and flexibility than an "yes/no" check.
+handful of APIs, you want more control and flexibility than a "yes/no" check can provide.
 
 ### The use of API Products for Access Control
 
-To extend beyond the "yes/no" decision, Apigee has the API product concept, which means
-that API publishers can configure specific client credentials (client IDs or API keys)
+To extend beyond the "yes/no" decision, Apigee has the API product concept.
+API publishers can configure specific client credentials (client IDs or API keys)
 to be authorized for specific API Products.  The Products are really just collections of
 Verb + Path pairs which will be permitted of authorized for that particular credential.
 Then, at runtime, Apigee will verify that the presented application client credential is
 authorized for an API Product that includes the particular verb + path pair that the
 current API request is using.
 
-
-For a 15-minute screencast review of the API Product concept and the implicit verb+path authorization checks, [see here](https://youtu.be/HGkW3gtk7OM). But the basics are:
+For a 15-minute screencast review of the API Product concept and the implicit verb+path
+authorization checks, [see here](https://youtu.be/HGkW3gtk7OM). But the basics are:
 
 - At configuration time:
   - API publishers define API Products. Each one includes 1 or more verb + path pairs.
@@ -76,24 +76,32 @@ that walks you through this, actually working in Apigee. Check it out!
 
 ### What about more flexible controls?
 
-This is all very powerful, and allows API Platform teams to control which _apps can call which
-APIs_.  One thing that is missing here is "role based access control", a/k/a RBAC, which would
-allow an access control decision based on the _identity of the human_ operating the
-application. Also missing is ABAC, what [OWASP calls "Attribute Based Access
+This is all very powerful, and allows API Platform teams to control which _apps can call
+which APIs_.  One thing that is missing here is "role based access control", a/k/a RBAC,
+which would allow an access control decision based on the _identity of the human_
+operating the application. Also missing is ABAC, what [OWASP calls "Attribute Based
+Access
 Control"](https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html#prefer-attribute-and-relationship-based-access-control-over-rbac),
-which allows control based not just on the role or identity of the caller, but also based on additional
-data, such as: Job role, time of day, project name, MAC address, record creation date, prior activity pattern, and
-others. Apigee does not have a good mechanism, by itself, for performing either user-by-user RBAC or the more advanced ABAC.
+which allows control based not just on the role or identity of the caller, but also
+based on additional data, such as: Job role, time of day, project name, MAC address,
+record creation date, prior activity pattern, and others. Apigee does not have a good
+mechanism, by itself, for performing either user-by-user RBAC or the more general ABAC.
 
 To accomplish user-based RBAC, or the more general ABAC, the typical pattern is to _externalize_
 the access control decision and use Apigee to _enforce_ the decision.
 
 The way it works for handling an inbound API call:
 
-- Apigee sends an access control request to an external Access Control system. This request must include
-  all the metadata that the external system will need to make a decision. The identity of the
-  caller, the resource being requested, the specific action being requested, the source IP
-  address, and so on. Whatever is required.
+- The Apigee runtime collects or determines all of the information it needs to inform an
+  access control decision. This might be information about the requesting user, a
+  billing account status, patterns of recent activity, and so on. Normally the user
+  information is obtained from something like an ID Token that is signed by an
+  independent Identity Provider.
+
+- Apigee sends an access control request to an external Access Control system. This
+  request must include all the metadata that the external system will need to make a
+  decision. The identity of the caller, the resource being requested, the specific
+  action being requested, the source IP address, and so on. Whatever is required.
 
 - The external system makes the decision (Allow or Deny), and sends it back to Apigee.
 
@@ -109,16 +117,15 @@ official Google product. It's just an example.
 
 ## Implementation Details
 
+The example here shows the basic idea.
 Here's how it works.
 
- 1. An app sends an API request into an Apigee API proxy.
- 2. The Apigee API proxy calls to an external Service implemented in C#, passing it {subject, resource, action}
- 3. C# service calls to Google Sheets to retrieve rules and roles
- 4. C# service applies the access rules and returns a "ALLOW" or "DENY" to the proxy
+ 1. An app sends an API request into an Apigee API proxy. Within that request, rather than
+    sending in an ID Token, the app sends an email address.
+ 2. The Apigee API proxy calls to an external service, passing it {subject, resource, action}. This service happens to be implemented in C#, but that's just a detail.
+ 3. The access control service calls the Google Sheets REST API to retrieve rules and roles.
+ 4. The access control service applies the access rules and returns a "ALLOW" or "DENY" to the proxy.
  5. The proxy enforces that decision.
-
-This particular implementation example uses a Google Sheet to store access control rules, and
-some custom logic coded in C# to apply those rules.
 
 The rules look like this:
 ![Screenshot](./images/Screenshot-20250611-183553.png)
@@ -158,6 +165,21 @@ looks like this:
   }
 ```
 
+Some implementation notes:
+
+1. In step 1, the app just sends in an email address, which obviously can be anything.
+   This is obviously an unverified claim, and receipents like Apigee should not depend
+   on such claims. Trustworthy information about the user is usually rovided via a
+   signed ID Token. But that is fairly simple to do, and I didn't want to clutter this
+   example with the inclusion of an identity provider, and verifying a token.  That's an
+   exercise left for the reader.  Remember, this is only an example, and the goal here
+   is to show the access control, not the authentication part.
+
+2. The access control service is a GRPC service. That means it will be relatively fast and efficient to call
+   into, from your Apigee API Proxy, and it should be acceptable to incur that check for
+   every API request. If the relatively low latency is still not acceptable, you can
+   move the rules evaluation logic into the Apigee proxy itself.
+
 ### Why not OPA for this?
 
 _Gooood Question!!_ [Open Policy Agent](https://www.openpolicyagent.org/) is a good
@@ -186,7 +208,7 @@ combination of all of those factors means using Sheets and C# makes for a soluti
 is more broadly _accessible_ than one based on the combination of OPA and REGO.
 
 BUT, the architectural model of the solution using OPA would be _exactly the same_ as what I've
-got here with C# and a Google Sheet.
+got here with a custom C# service and a Google Sheet.
 
 
 ## Screencast
@@ -199,10 +221,12 @@ TO BE ADDED
 To follow the instructions to deploy this in your own, you will need the following pre-requisites:
 
 - Apigee X or hybrid
-- a Google Cloud project with Cloud Run enabled
+- a Google Cloud project with Cloud Run and Cloud Build enabled
 - a Google Workspace environment that allows you to create and share spreadsheets
 - .NET 8.0
-- various tools: bash, gcloud, apigeecli, jq
+- various tools: bash, [curl](https://curl.se/), [gcloud CLI](https://cloud.google.com/sdk/docs/install), [apigeecli](https://github.com/apigee/apigeecli), [jq](https://jqlang.org/)
+
+You can get all of these things in the [Google Cloud Shell](https://cloud.google.com/shell/docs/launching-cloud-shell).
 
 
 ### Steps to follow:
@@ -219,7 +243,7 @@ To follow the instructions to deploy this in your own, you will need the followi
    ./1-enable-services.sh
    ```
 
-2. Signin with gcloud ti allow the script to create a spreadsheet:
+2. Signin with gcloud to allow the script to create a spreadsheet:
    ```sh
    ./2-auth-login.sh
    ```
@@ -259,12 +283,11 @@ To follow the instructions to deploy this in your own, you will need the followi
    ./6-install-apigeecli.sh
    ```
 
-
-5. Create the target server in Apigee, pointing to the Cloud Run service:
+5. Create the target server in Apigee, pointing to the Cloud Run service.
 
    Apigee connects to the access control server via GRPC, for optimal performance.
    Connecting to a server using GRPC requires a target server.
-   This step creates the targetserver.
+   This step creates the necessary targetserver.
 
    ```sh
    ./7-create-apigee-target-server.sh
@@ -276,36 +299,45 @@ To follow the instructions to deploy this in your own, you will need the followi
    ./8-import-and-deploy-apigee-proxy.sh
    ```
 
-   After this succeeds, you should be able to try out the example using
-   the suggested curl commands.
+   After this succeeds, the script will print out some suggested curl commands. You
+   should be able to try them out to see the access control working.
 
    If you like you can add or modify data into the sheet, to see how it affects the
-   access control decisions. Be aware: the Roles are cached for 3 minutes, and the Rules
-   for 2 minutes, in the Access Control Service.
+   access control decisions. If you make changes to the sheet, be aware: the Roles are
+   cached for 3 minutes, and the Rules for 2 minutes, in the Access Control Service.
 
    You can also check the log output of the Access Control service in Cloud Run,
-   to see what it is reading and doing.
+   to see what it is reading and doing.  To get more verbose logging, modify the 
+   5-deploy-cloud-run-service.sh script to use Debug logging, and re-run the script.
 
 
 ### Clean Up
 
-1. Remove the Apigee assets
+1. Remove the Apigee assets.
+
+   This includes the target server and the API proxy.
+
    ```sh
    ./99-clean-apigee-entities.sh
    ```
-1. Remove the Cloud Run assets
+
+2. Remove the Cloud Run assets.
+
+   This includes the service account.
+
    ```sh
    ./99-clean-cloud-run-authorization-service.sh
    ```
 
+3. Manually delete the Google sheet.
 
 
 ## Support
 
-This callout and example proxy is open-source software, and is not a supported part of Apigee.  If
-you have questions or need assistance with it, you can try inquiring on [the Google Cloud Community forum
-dedicated to Apigee](https://goo.gle/apigee-community) There is no service-level
-guarantee for responses to inquiries posted to that site.
+This callout and example proxy is open-source software, and is not a supported part of
+Apigee.  If you have questions or need assistance with it, you can try inquiring on [the
+Google Cloud Community forum dedicated to Apigee](https://goo.gle/apigee-community)
+There is no service-level guarantee for responses to inquiries posted to that site.
 
 ## License
 
@@ -315,10 +347,11 @@ code as well as the API Proxy configuration.
 
 ## Bugs
 
-* The Cloud Run service is deployed to allow "unauthenticated access".  If you use something like this in
-  a real system, you will want to deploy the Cloud Run service to allow run.invoke from the
-  service account your Access Control Service runs as.
+* The Cloud Run service is deployed to allow "unauthenticated access".  If you use
+  something like this in a real system, you will want to deploy the Cloud Run service to
+  allow run.invoke from the service account your Access Control Service runs as.
 
 * The C# service does not check for malformed rules or roles.
 
-* ??
+* The proxy trusts an email address just sent in a request header. A real system will
+  rely only on an ID token from a trusted identity provider.

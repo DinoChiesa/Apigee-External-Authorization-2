@@ -13,6 +13,8 @@ printf "\nNB: The example service will allow unauthenticated access.\n\n"
 
 SA_EMAIL="${CLOUDRUN_SHORT_SA}@${CLOUDRUN_PROJECT_ID}.iam.gserviceaccount.com"
 
+# log levels = Trace, Debug, Information, Warning, Error, Critical
+
 echo "gcloud run deploy \"${CLOUDRUN_SERVICE_NAME}\" \\"
 echo "  --source \"./\" \\"
 echo "  --project \"${CLOUDRUN_PROJECT_ID}\" \\"
@@ -22,6 +24,7 @@ echo "  --memory '512Mi' \\"
 echo "  --min-instances 0 \\"
 echo "  --max-instances 1 \\"
 echo "  --set-env-vars SHEET_ID=\"${SHEET_ID}\" \\"
+echo "  --set-env-vars Logging__LogLevel__Default=\"Information\" \\"
 echo "  --allow-unauthenticated \\"
 echo "  --update-build-env-vars=\"GCLOUD_BUILD=1\" \\"
 echo "  --region \"${CLOUDRUN_REGION}\" \\"
@@ -37,6 +40,7 @@ gcloud run deploy "${CLOUDRUN_SERVICE_NAME}" \
   --min-instances 0 \
   --max-instances 1 \
   --set-env-vars SHEET_ID="${SHEET_ID}" \
+  --set-env-vars Logging__LogLevel__Default="Information" \
   --allow-unauthenticated \
   --update-build-env-vars="GCLOUD_BUILD=1" \
   --region "${CLOUDRUN_REGION}" \
@@ -44,4 +48,3 @@ gcloud run deploy "${CLOUDRUN_SERVICE_NAME}" \
   --timeout 180
 
 printf "\nOK.\n"
-
