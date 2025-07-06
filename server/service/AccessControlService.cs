@@ -60,12 +60,21 @@ namespace Server
                     {
                         string pattern = entry[0];
                         string role = entry[1];
+                        _logger.LogInformation(
+                            $"ResolveRole: Exact match? subject({subject}) pattern({pattern}) role({role})"
+                        );
                         if (pattern == subject)
                         {
                             _logger.LogInformation(
                                 $"ResolveRole: Exact match for subject '{subject}' found role '{role}'."
                             );
                             return role;
+                        }
+                        else
+                        {
+                            _logger.LogInformation(
+                                $"ResolveRole: Exact match NEGATIVE subject({subject}) pattern({pattern}) role({role})"
+                            );
                         }
                     }
                 }
@@ -94,6 +103,12 @@ namespace Server
                                 );
                                 return role;
                             }
+                            else
+                            {
+                                _logger.LogInformation(
+                                    $"ResolveRole: Pattern match NEGATIVE pattern({pattern}) role({role})"
+                                );
+                            }
                         }
                     }
                 }
@@ -115,6 +130,9 @@ namespace Server
             if (ruleEntry != null && ruleEntry.Count >= 4)
             {
                 // ruleEntry[0] = role, ruleEntry[1] = resource, ruleEntry[2] = action, ruleEntry[3] = permission
+                _logger.LogInformation(
+                    $"CheckRule: role({ruleEntry[0]}|{targetRole}) rsrc({ruleEntry[1]}|{resource}) action({ruleEntry[2]}|{action})"
+                );
                 if (
                     string.Equals(ruleEntry[0], targetRole, StringComparison.OrdinalIgnoreCase)
                     && string.Equals(ruleEntry[1], resource, StringComparison.OrdinalIgnoreCase)
@@ -151,7 +169,13 @@ namespace Server
                             $"Specific role match. Role='{role}'"
                         );
                         if (allowed.HasValue)
+                        {
+                            _logger.LogInformation(
+                                $"EvaluateAccess: allowed ({role}, {resource}, {action})"
+                            );
+
                             return allowed.Value;
+                        }
                     }
                 }
 
@@ -166,12 +190,18 @@ namespace Server
                         "'any' role match"
                     );
                     if (allowed.HasValue)
+                    {
+                        _logger.LogInformation(
+                            $"EvaluateAccess: ANY allowed ({role ?? "null"}, {resource}, {action})"
+                        );
+
                         return allowed.Value;
+                    }
                 }
             }
 
             _logger.LogInformation(
-                $"EvaluateAccess: No matching rule found. Role='{role ?? "null"}', Resource='{resource}', Action='{action}'. Denying access."
+                $"EvaluateAccess: No matching rule found. ({role ?? "null"}, {resource}, {action}). Denying access."
             );
             return false;
         }
