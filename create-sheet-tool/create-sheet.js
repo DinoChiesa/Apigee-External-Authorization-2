@@ -113,8 +113,10 @@ async function createSheet() {
     const createResponse = await sheets.spreadsheets.create(request);
     let spreadsheetId = createResponse.data.spreadsheetId;
     console.log();
-    console.log(`Later, you will need to run this command:\n`);
-    console.log(`  export SHEETID=${spreadsheetId}\n`);
+    console.log(
+      `When the script finishes, copy/paste this command into your terminal:\n`,
+    );
+    console.log(`  export SHEET_ID=${spreadsheetId}\n`);
 
     console.log(`Adding data...`);
     for (const tabname of tabnames) {

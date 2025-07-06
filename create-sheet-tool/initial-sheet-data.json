@@ -1,0 +1,21 @@
+{
+  "Rules": [
+    ["Role", "Resource", "Action", "Result"],
+    ["any", "/ec-access-control/t1", "GET", "Allow"],
+    ["", "", "", ""],
+    ["employee", "/ec-access-control/t2", "GET", "Allow"],
+    ["employee", "/ec-access-control/t4", "GET", "Allow"],
+    ["", "", "", ""],
+    ["partner", "/ec-access-control/t2", "GET", "Allow"],
+    ["partner", "/ec-access-control/t3", "GET", "Allow"],
+    ["", "", "", ""],
+    ["any", "/ec-access-control/t1", "POST", "Deny"],
+    ["any", "/ec-access-control/t2", "POST", "Deny"]
+  ],
+  "Roles": [
+    ["Userid", "Role"],
+    ["person@example-company.com", "employee"],
+    ["*@partner1.org", "partner"],
+    ["partner2@gmail.com", "partner"]
+  ]
+}
