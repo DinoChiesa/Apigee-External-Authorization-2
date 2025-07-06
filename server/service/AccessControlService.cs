@@ -28,9 +28,8 @@ namespace Server
     {
         private readonly ILogger _logger;
         private readonly IMemoryCache _memoryCache;
-
-        //private readonly IHttpClientFactory _httpClientFactory;
         private readonly RemoteDataService _rds;
+        private readonly String buildTime;
 
         public AccessControlService(
             ILoggerFactory loggerFactory,
@@ -41,11 +40,17 @@ namespace Server
             _logger = loggerFactory.CreateLogger<AccessControlService>();
             _memoryCache = memoryCache;
             _rds = new RemoteDataService(_memoryCache, httpClientFactory);
-            //_httpClientFactory = httpClientFactory;
+            buildTime = cmdwtf.BuildTimestamp.BuildTimeUtc.ToString(
+                "o",
+                System.Globalization.CultureInfo.InvariantCulture
+            );
         }
 
         private String ResolveRole(GsheetData roles, String subject)
         {
+            _logger.LogInformation(
+                $"ResolveRole: resolving subject '{subject}' against {roles.Values.Count} roles."
+            );
             if (roles?.Values != null)
             {
                 // First pass: check for exact matches
@@ -180,23 +185,32 @@ namespace Server
 
             if (msgCtxt.Request != null)
             {
-                // Add or update header using the indexer
-                msgCtxt.Request.Headers["x-added-by-extcallout"] = new Strings
+                // ====================================================================
+                // Diagnostics
+                // Inject a header with the current date, and the buildTime of this service.
+                msgCtxt.Request.Headers["x-extcallout-id"] = new Strings
                 {
-                    Strings_ = { DateTime.UtcNow.ToString("o") },
+                    Strings_ = { $"now {DateTime.UtcNow.ToString("o")} build {buildTime}" },
                 };
-            }
 
-            var subject = msgCtxt.AdditionalFlowVariables["accesscontrol.subject"].String;
-            var action = msgCtxt.AdditionalFlowVariables["accesscontrol.action"].String;
-            var resource = msgCtxt.AdditionalFlowVariables["accesscontrol.resource"].String;
-            // var action = msgCtxt.Request.Verb;
-            // var resource = msgCtxt.Request.Uri;
-            bool isAllowed = await EvaluateAccess(subject, resource, action);
-            msgCtxt.AdditionalFlowVariables.Add("accesscontrol.result", new FlowVariable());
-            msgCtxt.AdditionalFlowVariables["accesscontrol.result"].String = isAllowed
-                ? "ALLOW"
-                : "DENY";
+                // Also inject a header showing the count of AdditionalFlowVariables
+                msgCtxt.Request.Headers["x-extcallout-variable-count"] = new Strings
+                {
+                    Strings_ = { $"{msgCtxt.AdditionalFlowVariables.Keys.Count}" },
+                };
+                // ====================================================================
+
+                var subject = msgCtxt.AdditionalFlowVariables["accesscontrol.subject"].String;
+                var action = msgCtxt.AdditionalFlowVariables["accesscontrol.action"].String;
+                var resource = msgCtxt.AdditionalFlowVariables["accesscontrol.resource"].String;
+                // var action = msgCtxt.Request.Verb;
+                // var resource = msgCtxt.Request.Uri;
+                bool isAllowed = await EvaluateAccess(subject, resource, action);
+                msgCtxt.AdditionalFlowVariables.Add("accesscontrol.result", new FlowVariable());
+                msgCtxt.AdditionalFlowVariables["accesscontrol.result"].String = isAllowed
+                    ? "ALLOW"
+                    : "DENY";
+            }
             return msgCtxt;
         }
     }

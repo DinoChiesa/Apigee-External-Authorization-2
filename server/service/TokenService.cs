@@ -14,8 +14,7 @@ public class TokenService
     static System.IO.TextWriter log = System.Console.Out;
     static readonly String PROJECT_ID =
         Environment.GetEnvironmentVariable("PROJECT_ID") ?? "not-set";
-    static readonly String SERVICE_ACCOUNT =
-        Environment.GetEnvironmentVariable("SA_EMAIL") ?? "not-set";
+    static readonly String SA_EMAIL = Environment.GetEnvironmentVariable("SA_EMAIL") ?? "not-set";
 
     // A single, static HttpClient can be reused for the application's lifetime.
     private static readonly HttpClient httpClient = new HttpClient();
@@ -36,8 +35,7 @@ public class TokenService
     /// Otherwise, it uses the local 'gcloud' CLI.
     /// </summary>
     /// <returns>The access token, or null if it cannot be retrieved.</returns>
-    public static async Task<string> LoadGcpAccessTokenAsync(
-    )
+    public static async Task<string> LoadGcpAccessTokenAsync()
     {
         if (IsRunningInCloud())
         {
@@ -89,10 +87,12 @@ public class TokenService
             log.WriteLine("INFO: Not running in Cloud Run, using gcloud CLI for token...");
             if (string.IsNullOrEmpty(PROJECT_ID))
             {
-                log.WriteLine("ERROR: environment variable PROJECT_ID is required for local 'gcloud' token retrieval.");
+                log.WriteLine(
+                    "ERROR: environment variable PROJECT_ID is required for local 'gcloud' token retrieval."
+                );
                 return null;
             }
-            if (string.IsNullOrEmpty(SERVICE_ACCOUNT))
+            if (string.IsNullOrEmpty(SA_EMAIL))
             {
                 log.WriteLine(
                     "ERROR: environment variable SA_EMAIL is required for local 'gcloud' token retrieval."
@@ -104,9 +104,11 @@ public class TokenService
                 "auth",
                 "print-access-token",
                 "--impersonate-service-account",
-                SERVICE_ACCOUNT,
+                SA_EMAIL,
                 "--project",
                 PROJECT_ID,
+                "--scopes",
+                "https://www.googleapis.com/auth/spreadsheets.readonly",
                 "--quiet"
             );
         }
