@@ -16,17 +16,15 @@
 # limitations under the License.
 #
 
-OUTFILE=$(mktemp /tmp/apiproxy-deploy.out.XXXXXX)
 PROXY_NAME="ec-access-control"
-example_name="server"
 
 source ./lib/utils.sh
 
 import_and_deploy_apiproxy() {
-  local proxy_name REV
+  local proxy_name rev
   proxy_name=$1
-  REV=$(apigeecli apis create bundle -f "./apiproxy" -n "$proxy_name" --org "$APIGEE_PROJECT" --token "$TOKEN" --disable-check | jq ."revision" -r)
-  apigeecli apis deploy --wait --name "$proxy_name" --ovr --rev "$REV" --org "$APIGEE_PROJECT" --env "$APIGEE_ENV" --token "$TOKEN" --disable-check
+  rev=$(apigeecli apis create bundle -f "./apiproxy" -n "$proxy_name" --org "$APIGEE_PROJECT_ID" --token "$TOKEN" --disable-check | jq ."revision" -r)
+  apigeecli apis deploy --wait --name "$proxy_name" --ovr --rev "$rev" --org "$APIGEE_PROJECT_ID" --env "$APIGEE_ENV" --token "$TOKEN" --disable-check
 }
 
 create_target_server() {
@@ -34,17 +32,15 @@ create_target_server() {
   target_server_name="$1"
   service_host_name="$2"
   printf "Checking the Apigee target server %s...\n" "${target_server_name}"
-  printf "Checking the Apigee target server %s...\n" "${target_server_name}" >>"$OUTFILE"
-  CURL -X GET "https://apigee.googleapis.com/v1/organizations/${APIGEE_PROJECT}/environments/${APIGEE_ENV}/targetservers/${target_server_name}"
+  CURL -X GET "https://apigee.googleapis.com/v1/organizations/${APIGEE_PROJECT_ID}/environments/${APIGEE_ENV}/targetservers/${target_server_name}"
   if [[ ${CURL_RC} -ne 200 ]]; then
     printf "That target server does not exist.\n"
     printf "Creating the Apigee target server %s...\n" "${target_server_name}"
-    printf "Creating the Apigee target server %s...\n" "${target_server_name}" >>"$OUTFILE"
-    CURL -X POST "https://apigee.googleapis.com/v1/organizations/${APIGEE_PROJECT}/environments/${APIGEE_ENV}/targetservers" \
+    CURL -X POST "https://apigee.googleapis.com/v1/organizations/${APIGEE_PROJECT_ID}/environments/${APIGEE_ENV}/targetservers" \
       -H 'Content-Type: application/json; charset=utf-8' \
       -d '{
   "name": "'${target_server_name}'",
-  "description": ".NET GRPC External Callout",
+  "description": "Example Access Control GRPC External Callout",
   "host": "'${service_host_name}'",
   "port": 443,
   "isEnabled": true,
@@ -60,14 +56,16 @@ create_target_server() {
 }
 
 set_service_hostname() {
-  printf "Checking for the cloud run service %s...\n" "$SERVICE"
-  printf "Checking for the cloud run service %s...\n" "$SERVICE" >>"$OUTFILE"
-  echo "gcloud run services describe \"${SERVICE}\" --project \"$CRUN_PROJECT\" --quiet" >>"$OUTFILE"
-  if gcloud run services describe "${SERVICE}" --project "$CRUN_PROJECT" --quiet >>"$OUTFILE" 2>&1; then
+  local service project service_url
+  service="$1"
+  project="$2"
+  printf "Checking for the cloud run service %s...\n" "$service"
+  echo "gcloud run services describe \"${SERVICE}\" --project \"$project\""
+  if gcloud run services describe "${service}" --project "$project" 2>&1; then
     printf "That service exists...\n"
-    SERVICE_URL=$(gcloud run services describe "${SERVICE}" --project "$CRUN_PROJECT" --format='value(status.url)')
-    SERVICE_HOSTNAME=${SERVICE_URL#https://}
-    echo "service hostname: ${SERVICE_HOSTNAME}" >>"$OUTFILE"
+    service_url=$(gcloud run services describe "${service}" --project "$project" --format='value(status.url)')
+    SERVICE_HOSTNAME=${service_url#https://}
+    echo "service hostname: ${SERVICE_HOSTNAME}"
   else
     printf "The required service does not exist.\n"
     printf "Please deploy it before re-running this script.\n"
@@ -77,19 +75,17 @@ set_service_hostname() {
 
 # ====================================================================
 
+check_shell_variables APIGEE_PROJECT_ID APIGEE_ENV APIGEE_HOST CLOUDRUN_SERVICE_NAME CLOUDRUN_PROJECT_ID
 check_required_commands gcloud curl jq bash
-check_shell_variables APIGEE_PROJECT APIGEE_ENV APIGEE_HOST SERVICE_ROOT
 
-echo "Installing apigeecli"
-curl -s https://raw.githubusercontent.com/apigee/apigeecli/main/downloadLatest.sh | bash
+
+# AI! Check to see that the directory 
 export PATH=$PATH:$HOME/.apigeecli/bin
 
 TOKEN=$(gcloud auth print-access-token)
 
-SERVICE="${SERVICE_ROOT}-${example_name}"
-
-set_service_hostname
-create_target_server "dotnet-access-control-server" "$SERVICE_HOSTNAME"
+set_service_hostname "$CLOUDRUN_SERVICE_NAME" "$CLOUDRUN_PROJECT_ID"
+create_target_server "example-access-control-server" "$SERVICE_HOSTNAME"
 import_and_deploy_apiproxy "$PROXY_NAME"
 
 echo "-----------------------------"
@@ -100,4 +96,5 @@ echo "curl -i -X GET https://${APIGEE_HOST}/${PROXY_NAME}/t1 -H \"Access-Control
 echo "curl -i -X GET https://${APIGEE_HOST}/${PROXY_NAME}/t2 -H \"Access-Control: person@example-company.com\""
 echo "curl -i -X GET https://${APIGEE_HOST}/${PROXY_NAME}/t3 -H \"Access-Control: person@partner1.org\""
 echo "curl -i -X GET https://${APIGEE_HOST}/${PROXY_NAME}/t3 -H \"Access-Control: person@example-company.com\""
+echo "curl -i -X GET https://${APIGEE_HOST}/${PROXY_NAME}/t3 -H \"Access-Control: partner2@gmail.com\""
 echo " "
