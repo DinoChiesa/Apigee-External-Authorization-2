@@ -83,8 +83,11 @@ check_shell_variables APIGEE_PROJECT APIGEE_ENV APIGEE_HOST
 
 TOKEN=$(gcloud auth print-access-token)
 
-echo "Installing apigeecli"
-curl -s https://raw.githubusercontent.com/apigee/apigeecli/main/downloadLatest.sh | bash
+if [[ ! -d "$HOME/.apigeecli/bin" ]]; then
+  printf "apigeecli is not installed in the default location (%s).\n" "$HOME/.apigeecli/bin" >&2
+  printf "Please install it from https://github.com/apigee/apigeecli\n" >&2
+  exit 1
+fi
 export PATH=$PATH:$HOME/.apigeecli/bin
 
 delete_apiproxy "${PROXY_NAME}"

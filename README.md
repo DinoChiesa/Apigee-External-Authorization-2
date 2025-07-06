@@ -41,27 +41,32 @@ In the former case, the one relying on the OAuthV2 access token, of course, the 
 have previously obtained the access token, via some grant flow. That is just the standard
 OAuthV2 model, nothing new there.
 
-But as you can see, whether using a key or a token, the control is binary. Either the caller has
-the valid key or token, or it does not.
+But as you can see, whether using a key or a token, the control is binary. Either the
+caller has the valid key or token, or it does not.  If you are managing more than a
+handful of APIs, you want more control and flexibility than an "yes/no" check.
 
 ### The use of API Products for Access Control
 
-Well it's not quite so simple: Apigee has the API product concept,
-which means that API publishers can configure specific client credentials (client IDs or API keys)
+To extend beyond the "yes/no" decision, Apigee has the API product concept, which means
+that API publishers can configure specific client credentials (client IDs or API keys)
 to be authorized for specific API Products.  The Products are really just collections of
-Verb + Path pairs which will be permitted.  Then, at runtime, Apigee will verify that the presented application client credential
-must be authorized for an API Product that includes the
-particular verb + path pair that the current API request is using.
+Verb + Path pairs which will be permitted of authorized for that particular credential.
+Then, at runtime, Apigee will verify that the presented application client credential is
+authorized for an API Product that includes the particular verb + path pair that the
+current API request is using.
 
-At configuration time:
-- API publishers define API Products. Each one includes 1 or more verb + path pairs.
-- Client developers obtain credentials (client IDs) for their apps. Each credential is authorized for one or more API Products.
-- Client developers embed those credentials into the apps they build.
 
-At runtime:
-- client app sends in GET /foo (verb = GET, path = /foo)
-- Apigee checks the key or token, depending on the policy you attach to your API Proxy
-- if valid, Apigee checks that the verb + path pair is authorized via at least one of the API Products
+For a 15-minute screencast review of the API Product concept and the implicit verb+path authorization checks, [see here](https://youtu.be/HGkW3gtk7OM). But the basics are:
+
+- At configuration time:
+  - API publishers define API Products. Each one includes 1 or more verb + path pairs.
+  - Client developers obtain credentials (client IDs) for their apps. Each credential is authorized for one or more API Products.
+  - Client developers embed those credentials into the apps they build.
+
+- At runtime:
+  - client app sends in GET /foo (verb = GET, path = /foo).
+  - When you call VerifyAPIKey or VerifyAccessToken, Apigee checks the key or token.
+  - if valid, Apigee _implicitly_ checks that the verb + path pair is authorized via at least one of the API Products associated to the credential.
 
 And beyond the basics, you can also configure Apigee to check a scope on an Access Token.
 
@@ -100,8 +105,7 @@ a custom Cloud Run service to externalize the access control decision.
 ## Disclaimer
 
 This example is not an official Google product, nor is it part of an
-official Google product.
-
+official Google product. It's just an example.
 
 ## Implementation Details
 
@@ -156,22 +160,30 @@ looks like this:
 
 ### Why not OPA for this?
 
-_Gooood Question!!_ [Open Policy Agent](https://www.openpolicyagent.org/) is a good solution for
-storing, managing, and evaluating access rules.  It's open source, well maintanied, and
-available as a deployable container image. You can deploy it right to something like Cloud Run;
+_Gooood Question!!_ [Open Policy Agent](https://www.openpolicyagent.org/) is a good
+solution for storing, managing, and evaluating access rules, for arbitrary systems or
+resources.  It's open source, well maintanied, and available as a deployable container
+image. You can deploy [the container
+image](https://hub.docker.com/r/openpolicyagent/opa) right to something like Cloud Run;
 no need to build the code.
 
 All sounds good, right?  The _one drawback_ that I've seen is that OPA depends on
 [REGO](https://www.openpolicyagent.org/docs/policy-language) to express policies. This is
 a domain-specific language; I have not seen it used in any place _other_ than OPA.
-That can be an obstacle to some teams.
+And it is somewhat novel. That can be an obstacle to some teams.
 
-I wanted to use a Google Sheet to store the access rules because it's visual - it's easy to see what
-specific rules are in place; it's easy to demonstrate; and it's easy to update and maintain the
-access rules.  It's easy to _protect_ the access rules with User rights on the Sheets document.
-The C# logic that applies the rules is also fairly easy to understand. The combination of all of
-those factors means using Sheets and C# makes for a solution that is more broadly _accessible_
-than one based on the combination of OPA and REGO.
+For this particular example, I decided to use a Google Sheet to store the access rules for these reasons:
+
+- it's visual - it's easy to see what specific rules are in place, and easy to demonstrate;
+- it's easy to update and maintain the access rules.
+- it's easy to _protect_ the access rules with User rights on the Sheets document.
+- it's easy to get a log of who changed what - just look at the version history on the sheet.
+
+All of that, you get "for free" with a Google Sheet.
+
+The C# logic that retrieves and applies the rules is also fairly easy to understand. The
+combination of all of those factors means using Sheets and C# makes for a solution that
+is more broadly _accessible_ than one based on the combination of OPA and REGO.
 
 BUT, the architectural model of the solution using OPA would be _exactly the same_ as what I've
 got here with C# and a Google Sheet.
@@ -180,6 +192,7 @@ got here with C# and a Google Sheet.
 ## Screencast
 
 TO BE ADDED
+
 
 ## Deploying it for your own purposes
 
@@ -192,10 +205,89 @@ To follow the instructions to deploy this in your own, you will need the followi
 - various tools: bash, gcloud, apigeecli, jq
 
 
+### Steps to follow:
+
+1. Enable the services needed:
+   ```sh
+   ./1-enable-services.sh
+   ```
+
+2. Signin with gcloud ti allow the script to create a spreadsheet:
+   ```sh
+   ./2-auth-login.sh
+   ```
+
+3. Create the sheet that holds Rules + Roles
+   ```sh
+   ./3-create-sheet.sh
+   ```
+
+4. Create the service account for the Access Control service.
+   ```sh
+   ./4-create-service-account.sh
+   ```
+
+5. Manually share the sheet created previously with the SA email address.
+
+
+6. Deploy the Cloud Run Service that will read and apply the Rules in the sheet.
+
+   You need to first define the shell variable for the Sheet ID. Find that from the output
+   of the "create sheet" step.
+
+   ```sh
+   export SHEETID=VALUE-FROM-PRIOR-STEP
+   ./5-deploy-cloud-run-service.sh
+   ```
+
+5. Install apigeecli
+
+   ```sh
+   ./6-install-apigeecli.sh
+   ```
+
+
+5. Create the target server in Apigee, pointing to the Cloud Run service:
+
+   Apigee connects to the access control server via GRPC, for optimal performance.
+   Connecting to a server using GRPC requires a target server.
+   This step creates the targetserver.
+
+   ```sh
+   ./7-create-apigee-target-server.sh
+   ```
+
+5. Import and deploy the Apigee API Proxy
+
+   ```sh
+   ./8-import-and-deploy-apigee-proxy.sh
+   ```
+
+   After this succeeds, you should be able to try out the example using
+   the suggested curl commands.
+
+   If you like you can add or modify data into the sheet, to see how
+   it affects the access control decisions. Be aware: the Roles are cached for 3 minutes,
+   and the Rules for 2 minutes, in the Access Control Service.
+
+
+### Clean Up
+
+1. Remove the Apigee assets
+   ```sh
+   ./99-clean-apigee-entities.sh
+   ```
+1. Remove the Cloud Run assets
+   ```sh
+   ./99-clean-cloud-run-authorization-service.sh
+   ```
+
+
+
 ## Support
 
-This callout is open-source software, and is not a supported part of Apigee.  If
-you need assistance, you can try inquiring on [the Google Cloud Community forum
+This callout and example proxy is open-source software, and is not a supported part of Apigee.  If
+you have questions or need assistance with it, you can try inquiring on [the Google Cloud Community forum
 dedicated to Apigee](https://goo.gle/apigee-community) There is no service-level
 guarantee for responses to inquiries posted to that site.
 
@@ -207,7 +299,10 @@ code as well as the API Proxy configuration.
 
 ## Bugs
 
-* The Cloud Run service is deployed to allow "unauthenticated access".
-* The C# service does not check for malformed rules or roles.
-* ??
+* The Cloud Run service is deployed to allow "unauthenticated access".  If you use something like this in
+  a real system, you will want to deploy the Cloud Run service to allow run.invoke from the
+  service account your Access Control Service runs as.
 
+* The C# service does not check for malformed rules or roles.
+
+* ??

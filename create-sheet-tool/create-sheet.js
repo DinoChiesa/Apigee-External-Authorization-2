@@ -19,7 +19,6 @@ import { exec } from "node:child_process";
 import { promisify } from "node:util";
 import { GoogleAuth } from "google-auth-library";
 import { google } from "googleapis";
-import opn from "opn";
 import dayjs from "dayjs";
 
 const today = dayjs(new Date()).format("YYYY-MMM-DD");
@@ -55,7 +54,7 @@ async function checkApplicationDefaultCreds() {
 
 async function execCmd(command) {
   try {
-    console.log(`🚀 Running command: ${command}`);
+    console.log(`Running command: ${command}`);
     // Await the promise. On success, it resolves with { stdout, stderr }.
     const { stdout, stderr } = await execP(command);
     if (stderr) {
@@ -98,47 +97,44 @@ async function createSheet() {
     );
 
     const sheets = google.sheets({ version: "v4", auth });
+    const tabnames = Object.keys(initialSheetData);
     var request = {
       resource: {
         properties: {
           title: `Access Control [created ${today}]`,
         },
-        sheets: [
-          {
-            properties: { sheetId: 0, title: "Rules" },
-          },
-          {
-            properties: { sheetId: 1, title: "Roles" },
-          },
-        ],
+        sheets: tabnames.map((title, ix) => ({
+          properties: { sheetId: ix, title },
+        })),
       },
     };
 
+    console.log(`Creating the sheet...`);
     const createResponse = await sheets.spreadsheets.create(request);
     let spreadsheetId = createResponse.data.spreadsheetId;
     console.log();
-    console.log(`SHEETID=${spreadsheetId}\n`);
+    console.log(`Later, you will need to run this command:\n`);
+    console.log(`  export SHEETID=${spreadsheetId}\n`);
 
-    const sheetDataKeys = ["rules", "roles"];
-    for (const dataKey of sheetDataKeys) {
-      const sheetName = dataKey.charAt(0).toUpperCase() + dataKey.slice(1);
-      const values = initialSheetData[dataKey];
+    console.log(`Adding data...`);
+    for (const tabname of tabnames) {
+      const values = initialSheetData[tabname];
       const updateRequest = {
         spreadsheetId,
         valueInputOption: "USER_ENTERED",
-        range: `${sheetName}!R[0]C[0]:R[${values.length}]C[${values[0].length}]`,
+        range: `${tabname}!R[0]C[0]:R[${values.length}]C[${values[0].length}]`,
         resource: { values },
       };
       await sheets.spreadsheets.values.update(updateRequest);
     }
+    console.log("\nOK\n\n");
 
     console.log(
-      `Later, you will need to share the sheet with the service account email`,
+      `Later, you will need to share the sheet with the service account email.\n\n`,
     );
     const sheetUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit`;
-    console.log(`sheet url: ${sheetUrl}`);
-    opn(sheetUrl, { wait: false });
-    console.log("done");
+    console.log(`To view the data, open this sheet url:\n    ${sheetUrl}`);
+    console.log("\ndone\n\n");
   } catch (e) {
     handleError(e);
   }

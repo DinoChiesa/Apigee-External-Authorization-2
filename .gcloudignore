@@ -7,14 +7,18 @@
 .gitignore
 bin
 obj
+lib
+images
 *.*~
 
 .git
 
 .aider*
-
-build-and-deploy-service.sh
+create-sheet-tool
 apiproxy
+
+*.sh
+*.md
 
 **/NOT_USED
 
