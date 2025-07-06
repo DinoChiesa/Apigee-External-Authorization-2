@@ -175,10 +175,15 @@ Some implementation notes:
    exercise left for the reader.  Remember, this is only an example, and the goal here
    is to show the access control, not the authentication part.
 
-2. The access control service is a GRPC service. That means it will be relatively fast and efficient to call
-   into, from your Apigee API Proxy, and it should be acceptable to incur that check for
-   every API request. If the relatively low latency is still not acceptable, you can
-   move the rules evaluation logic into the Apigee proxy itself.
+2. This example does not perform any credential verification within Apigee.  It does not
+   call to VerifyAPIKey nor VerifyAccessToken. As above, I think that is fairly simple
+   to do, and I didn't want to clutter this example with that stuff. In a real system
+   you're going to want to validate the credential of the calling app!
+
+3. The access control service is a GRPC service. That means it will be relatively fast
+   and efficient to call into, from your Apigee API Proxy, and it should be acceptable
+   to incur that check for every API request. If the relatively low latency is still not
+   acceptable, you can move the rules evaluation logic into the Apigee proxy itself.
 
 ### Why not OPA for this?
 
@@ -307,7 +312,7 @@ You can get all of these things in the [Google Cloud Shell](https://cloud.google
    cached for 3 minutes, and the Rules for 2 minutes, in the Access Control Service.
 
    You can also check the log output of the Access Control service in Cloud Run,
-   to see what it is reading and doing.  To get more verbose logging, modify the 
+   to see what it is reading and doing.  To get more verbose logging, modify the
    5-deploy-cloud-run-service.sh script to use Debug logging, and re-run the script.
 
 
