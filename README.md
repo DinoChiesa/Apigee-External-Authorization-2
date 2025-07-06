@@ -50,7 +50,7 @@ handful of APIs, you want more control and flexibility than a "yes/no" check can
 To extend beyond the "yes/no" decision, Apigee has the API product concept.
 API publishers can configure specific client credentials (client IDs or API keys)
 to be authorized for specific API Products.  The Products are really just collections of
-Verb + Path pairs which will be permitted of authorized for that particular credential.
+Verb + Path pairs which will be permitted or authorized for that particular credential.
 Then, at runtime, Apigee will verify that the presented application client credential is
 authorized for an API Product that includes the particular verb + path pair that the
 current API request is using.
@@ -83,7 +83,7 @@ operating the application. Also missing is ABAC, what [OWASP calls "Attribute Ba
 Access
 Control"](https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html#prefer-attribute-and-relationship-based-access-control-over-rbac),
 which allows control based not just on the role or identity of the caller, but also
-based on additional data, such as: Job role, time of day, project name, MAC address,
+based on additional data, such as: Job role, time of day, project name, originating IP address,
 record creation date, prior activity pattern, and others. Apigee does not have a good
 mechanism, by itself, for performing either user-by-user RBAC or the more general ABAC.
 

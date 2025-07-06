@@ -81,6 +81,45 @@ async function defaultProject() {
   return await execCmd(command);
 }
 
+function formattingUpdate(spreadsheetId, tabName) {
+  let range = {
+    sheetId: tabName == "Rules" ? 0 : 1,
+    startRowIndex: 0,
+    endRowIndex: 1,
+    startColumnIndex: 0,
+    endColumnIndex: tabName == "Rules" ? 4 : 2,
+  };
+  let batch = {
+    spreadsheetId,
+    resource: {
+      requests: [
+        {
+          // add a bottom border to the header row
+          updateBorders: {
+            range,
+            bottom: {
+              style: "SOLID",
+              width: 2,
+              color: { red: 0, green: 0, blue: 0 },
+            },
+          },
+        },
+        {
+          // bold the header row
+          repeatCell: {
+            range,
+            cell: {
+              userEnteredFormat: { textFormat: { bold: true } },
+            },
+            fields: "userEnteredFormat(textFormat)",
+          },
+        },
+      ],
+    },
+  };
+  return batch;
+}
+
 async function createSheet() {
   try {
     const creds = await checkApplicationDefaultCreds();
@@ -128,6 +167,9 @@ async function createSheet() {
         resource: { values },
       };
       await sheets.spreadsheets.values.update(updateRequest);
+      await sheets.spreadsheets.batchUpdate(
+        formattingUpdate(spreadsheetId, tabname),
+      );
     }
     console.log("\nOK\n\n");
 

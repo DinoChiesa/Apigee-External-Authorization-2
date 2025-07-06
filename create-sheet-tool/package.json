@@ -6,9 +6,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
+  "author": "dchiesa@google.com",
   "license": "Apache-2.0",
-  "description": "",
+  "description": "a tool to ingest some json data into a Google Sheet",
   "dependencies": {
     "dayjs": "^1.11.13",
     "google-auth-library": "^10.1.0",
