@@ -79,7 +79,11 @@ check_shell_variables APIGEE_PROJECT_ID APIGEE_ENV APIGEE_HOST CLOUDRUN_SERVICE_
 check_required_commands gcloud curl jq bash
 
 
-# AI! Check to see that the directory 
+if [[ ! -d "$HOME/.apigeecli/bin" ]]; then
+  printf "apigeecli is not installed in the default location (%s).\n" "$HOME/.apigeecli/bin" >&2
+  printf "Please install it from https://github.com/apigee/apigeecli\n" >&2
+  exit 1
+fi
 export PATH=$PATH:$HOME/.apigeecli/bin
 
 TOKEN=$(gcloud auth print-access-token)
