@@ -64,9 +64,9 @@ authorization checks, [see here](https://youtu.be/HGkW3gtk7OM). But the basics a
   - Client developers embed those credentials into the apps they build.
 
 - At runtime:
-  - client app sends in GET /foo (verb = GET, path = /foo).
+  - The client app sends in GET /foo (verb = GET, path = /foo).
   - When you call VerifyAPIKey or VerifyAccessToken, Apigee checks the key or token.
-  - if valid, Apigee _implicitly_ checks that the verb + path pair is authorized via at least one of the API Products associated to the credential.
+  - If valid, Apigee _implicitly_ checks that the verb + path pair is authorized via at least one of the API Products associated to the credential.
 
 And beyond the basics, you can also configure Apigee to check a scope on an Access Token.
 
@@ -168,12 +168,13 @@ looks like this:
 Some implementation notes:
 
 1. In step 1, the app just sends in an email address, which obviously can be anything.
-   This is obviously an unverified claim, and receipents like Apigee should not depend
+   This is obviously an unverified claim, and recepients like Apigee should not depend
    on such claims. Trustworthy information about the user is usually rovided via a
    signed ID Token. But that is fairly simple to do, and I didn't want to clutter this
-   example with the inclusion of an identity provider, and verifying a token.  That's an
-   exercise left for the reader.  Remember, this is only an example, and the goal here
-   is to show the access control, not the authentication part.
+   example with the inclusion of an identity provider, and verifying the signature on an
+   ID token.  That's an exercise left for the reader.  Remember, this is only an
+   example, and the goal here is to show the access control, not the authentication
+   part.
 
 2. This example does not perform any credential verification within Apigee.  It does not
    call to VerifyAPIKey nor VerifyAccessToken. As above, I think that is fairly simple
@@ -185,7 +186,7 @@ Some implementation notes:
    to incur that check for every API request. If the relatively low latency is still not
    acceptable, you can move the rules evaluation logic into the Apigee proxy itself.
 
-### Why not OPA for this?
+### Why not use OPA for Access Control?
 
 _Gooood Question!!_ [Open Policy Agent](https://www.openpolicyagent.org/) is a good
 solution for storing, managing, and evaluating access rules, for arbitrary systems or
@@ -215,20 +216,21 @@ is more broadly _accessible_ than one based on the combination of OPA and REGO.
 BUT, the architectural model of the solution using OPA would be _exactly the same_ as what I've
 got here with a custom C# service and a Google Sheet.
 
-
 ## Screencast
 
-TO BE ADDED
+I recorded a Screencast walkthrough of this example, which you can
+view [here](https://youtu.be/1O_OLErxWY8).
 
 
 ## Deploying it for your own purposes
 
-To follow the instructions to deploy this in your own, you will need the following pre-requisites:
+To follow the instructions to deploy this in your own environment, you will need the
+following pre-requisites:
 
 - Apigee X or hybrid
 - a Google Cloud project with Cloud Run and Cloud Build enabled
 - a Google Workspace environment that allows you to create and share spreadsheets
-- .NET 8.0
+- .NET 8.0 - _if you want to modify the source code and build locally_. Otherwise Cloud Build will build it for you remotely, and you don't need .NET on your workstation.
 - various tools: bash, [curl](https://curl.se/), [gcloud CLI](https://cloud.google.com/sdk/docs/install), [apigeecli](https://github.com/apigee/apigeecli), [jq](https://jqlang.org/)
 
 You can get all of these things in the [Google Cloud Shell](https://cloud.google.com/shell/docs/launching-cloud-shell).
@@ -253,7 +255,7 @@ You can get all of these things in the [Google Cloud Shell](https://cloud.google
    ./2-auth-login.sh
    ```
 
-3. Create the sheet that holds Rules + Roles
+3. Create the sheet that holds Rules + Roles.
    ```sh
    ./3-create-sheet.sh
    ```
