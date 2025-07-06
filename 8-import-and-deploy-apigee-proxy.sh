@@ -23,7 +23,9 @@ source ./lib/utils.sh
 import_and_deploy_apiproxy() {
   local proxy_name rev
   proxy_name=$1
+  printf "Importing %s into %s...\n" "$proxy_name" "${APIGEE_PROJECT_ID}"
   rev=$(apigeecli apis create bundle -f "./apiproxy" -n "$proxy_name" --org "$APIGEE_PROJECT_ID" --token "$TOKEN" --disable-check | jq ."revision" -r)
+  printf "Deploying proxy %s revision %s into %s/%s...\n" "$proxy_name" "$rev" "${APIGEE_PROJECT_ID}" "${APIGEE_ENV}"
   apigeecli apis deploy --wait --name "$proxy_name" --ovr --rev "$rev" --org "$APIGEE_PROJECT_ID" --env "$APIGEE_ENV" --token "$TOKEN" --disable-check
 }
 
@@ -47,9 +49,14 @@ echo "-----------------------------"
 echo " "
 echo "To call the API manually, use the following:"
 echo " "
-echo "curl -i -X GET https://${APIGEE_HOST}/${PROXY_NAME}/t1 -H \"Access-Control: person@example-company.com\""
-echo "curl -i -X GET https://${APIGEE_HOST}/${PROXY_NAME}/t2 -H \"Access-Control: person@example-company.com\""
-echo "curl -i -X GET https://${APIGEE_HOST}/${PROXY_NAME}/t3 -H \"Access-Control: person@partner1.org\""
-echo "curl -i -X GET https://${APIGEE_HOST}/${PROXY_NAME}/t3 -H \"Access-Control: person@example-company.com\""
-echo "curl -i -X GET https://${APIGEE_HOST}/${PROXY_NAME}/t3 -H \"Access-Control: partner2@gmail.com\""
+echo "These are expected to succeed with the default rules:"
+echo "  curl -i -X GET https://${APIGEE_HOST}/${PROXY_NAME}/t1 -H \"Access-Control: person@example-company.com\""
+echo "  curl -i -X GET https://${APIGEE_HOST}/${PROXY_NAME}/t2 -H \"Access-Control: person@example-company.com\""
+echo "  curl -i -X GET https://${APIGEE_HOST}/${PROXY_NAME}/t4 -H \"Access-Control: person@example-company.com\""
+echo "  curl -i -X GET https://${APIGEE_HOST}/${PROXY_NAME}/t3 -H \"Access-Control: person@partner1.org\""
+echo "  curl -i -X GET https://${APIGEE_HOST}/${PROXY_NAME}/t3 -H \"Access-Control: partner2@gmail.com\""
 echo " "
+echo "These are expected to generate an access denied response, using the default rules:"
+echo "  curl -i -X GET https://${APIGEE_HOST}/${PROXY_NAME}/t4 -H \"Access-Control: person@partner1.org\""
+echo "  curl -i -X GET https://${APIGEE_HOST}/${PROXY_NAME}/t3 -H \"Access-Control: person@example-company.com\""
+echo "  curl -i -X GET https://${APIGEE_HOST}/${PROXY_NAME}/t1 -X POST -d 'hello'  -H \"Access-Control: person@example-company.com\""

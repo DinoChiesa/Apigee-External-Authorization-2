@@ -207,6 +207,13 @@ To follow the instructions to deploy this in your own, you will need the followi
 
 ### Steps to follow:
 
+1. Modify the env.sh file to suit your environment. Then source it to set those
+   variables for use in subsequent commands:
+
+   ```sh
+   source ./env.sh
+   ```
+
 1. Enable the services needed:
    ```sh
    ./1-enable-services.sh
@@ -222,6 +229,12 @@ To follow the instructions to deploy this in your own, you will need the followi
    ./3-create-sheet.sh
    ```
 
+   When the script finishes, define the shell variable for the Sheet ID. Find that from the output
+   of the "create sheet" step.
+   ```sh
+   export SHEET_ID=VALUE-FROM-PRIOR-STEP
+   ```
+
 4. Create the service account for the Access Control service.
    ```sh
    ./4-create-service-account.sh
@@ -232,13 +245,13 @@ To follow the instructions to deploy this in your own, you will need the followi
 
 6. Deploy the Cloud Run Service that will read and apply the Rules in the sheet.
 
-   You need to first define the shell variable for the Sheet ID. Find that from the output
-   of the "create sheet" step.
-
    ```sh
-   export SHEETID=VALUE-FROM-PRIOR-STEP
    ./5-deploy-cloud-run-service.sh
    ```
+
+   This takes a few minutes. It sends the source code up to Cloud Build,
+   builds the service, then deploys it from the image.
+
 
 5. Install apigeecli
 
@@ -266,9 +279,12 @@ To follow the instructions to deploy this in your own, you will need the followi
    After this succeeds, you should be able to try out the example using
    the suggested curl commands.
 
-   If you like you can add or modify data into the sheet, to see how
-   it affects the access control decisions. Be aware: the Roles are cached for 3 minutes,
-   and the Rules for 2 minutes, in the Access Control Service.
+   If you like you can add or modify data into the sheet, to see how it affects the
+   access control decisions. Be aware: the Roles are cached for 3 minutes, and the Rules
+   for 2 minutes, in the Access Control Service.
+
+   You can also check the log output of the Access Control service in Cloud Run,
+   to see what it is reading and doing.
 
 
 ### Clean Up

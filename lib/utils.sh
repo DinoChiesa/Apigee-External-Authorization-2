@@ -18,13 +18,9 @@ CURL() {
   [[ -z "${CURL_OUT}" ]] && CURL_OUT=$(mktemp /tmp/apigee-setup-script.curl.out.XXXXXX)
   [[ -f "${CURL_OUT}" ]] && rm ${CURL_OUT}
   #[[ $verbosity -gt 0 ]] && echo "curl $@"
-  echo "--------------------" >>"$OUTFILE"
-  echo "curl $@" >>"$OUTFILE"
   [[ $verbosity -gt 0 ]] && echo "curl $@"
   CURL_RC=$(curl -s -w "%{http_code}" -H "Authorization: Bearer $TOKEN" -o "${CURL_OUT}" "$@")
   [[ $verbosity -gt 0 ]] && echo "==> ${CURL_RC}"
-  echo "==> ${CURL_RC}" >>"$OUTFILE"
-  cat "${CURL_OUT}" >>"$OUTFILE"
 }
 
 check_shell_variables() {

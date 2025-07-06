@@ -1,11 +1,15 @@
-# variables you should set
+# variables you can change if you like
+export APIGEE_PROJECT_ID=my-apigee-gcp-project
+export APIGEE_ENV=test
+export APIGEE_HOST=my-apigee-host.example.com
+export CLOUDRUN_PROJECT_ID=my-crun-gcp-project
+export CLOUDRUN_REGION=us-west1
 
-export APIGEE_PROJECT=my-apigee-gcp-project
-export APIGEE_ENV=eval
-export APIGEE_HOST="my-apigee-host.example.com"
+# access control service name in Cloud Run - change if you like
+export CLOUDRUN_SERVICE_NAME=access-control-sample-72b65926
+# contrived short SA name - change if you like
+export CLOUDRUN_SHORT_SA=acc-ctrl-72b65926
 
-export CRUN_PROJECT=my-gcp-project
-export CRUN_REGION=us-west1
-export SERVICE_ROOT=dotnet-excallout
-export SHEET_ID=1-s1H2vEB9aefDPbdPSRvo4nFnIdNxwxQORbHy8_0Ib8
+
+
 

@@ -83,4 +83,4 @@ printf "\nOK.\n\n"
 SA_EMAIL="${CLOUDRUN_SHORT_SA}@${CLOUDRUN_PROJECT_ID}.iam.gserviceaccount.com"
 
 printf "The Service Account email is:\n  %s\n" "$SA_EMAIL"
-printf "\nShare the sheet created previously, with this ^^ email address.\n"
+printf "\nShare the sheet created previously, with this ^^ email address, as Commenter or Viewer.\n\n"
