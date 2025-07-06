@@ -83,73 +83,65 @@ async function defaultProject() {
 }
 
 async function createSheet() {
-  const creds = await checkApplicationDefaultCreds();
-  const accessToken = await signin();
-  const quotaProject = await defaultProject();
-  const auth = new GoogleAuth({});
-  auth.getRequestHeaders = () => ({
-    "x-goog-user-project": quotaProject,
-    Authorization: `Bearer ${accessToken}`,
-  });
+  try {
+    const creds = await checkApplicationDefaultCreds();
+    const accessToken = await signin();
+    const quotaProject = await defaultProject();
+    const auth = new GoogleAuth({});
+    auth.getRequestHeaders = () => ({
+      "x-goog-user-project": quotaProject,
+      Authorization: `Bearer ${accessToken}`,
+    });
 
-  const initialSheetData = JSON.parse(
-    await fs.readFile("initial-sheet-data.json", "utf8"),
-  );
+    const initialSheetData = JSON.parse(
+      await fs.readFile("initial-sheet-data.json", "utf8"),
+    );
 
-  const sheets = google.sheets({ version: "v4", auth });
-  var request = {
-    resource: {
-      properties: {
-        title: `Access Control [created ${today}]`,
+    const sheets = google.sheets({ version: "v4", auth });
+    var request = {
+      resource: {
+        properties: {
+          title: `Access Control [created ${today}]`,
+        },
+        sheets: [
+          {
+            properties: { sheetId: 0, title: "Rules" },
+          },
+          {
+            properties: { sheetId: 1, title: "Roles" },
+          },
+        ],
       },
-      sheets: [
-        {
-          properties: { sheetId: 0, title: "Rules" },
-        },
-        {
-          properties: { sheetId: 1, title: "Roles" },
-        },
-      ],
-    },
-  };
-  sheets.spreadsheets.create(request, function (e, createResponse) {
-    handleError(e);
+    };
+
+    const createResponse = await sheets.spreadsheets.create(request);
     let spreadsheetId = createResponse.data.spreadsheetId;
     console.log();
     console.log(`SHEETID=${spreadsheetId}\n`);
 
-    // AI! The following two calls to sheets.spreadsheets.values.update
-    // are almost exactly the same. Is there a clean way to
-    // re-use the code?  Maybe wrap the update in a promise,
-    // and use a reduce on ['rules', 'roles']?
-
-    const values = initialSheetData.rules;
-    let update1 = {
-      spreadsheetId,
-      valueInputOption: "USER_ENTERED",
-      range: `Rules!R[0]C[0]:R[${values.length}]C[${values[0].length}]`,
-      resource: { values },
-    };
-    sheets.spreadsheets.values.update(update1, (e, updateResponse) => {
-      const values = initialSheetData.roles;
-      let update1 = {
+    const sheetDataKeys = ["rules", "roles"];
+    for (const dataKey of sheetDataKeys) {
+      const sheetName = dataKey.charAt(0).toUpperCase() + dataKey.slice(1);
+      const values = initialSheetData[dataKey];
+      const updateRequest = {
         spreadsheetId,
         valueInputOption: "USER_ENTERED",
-        range: `Roles!R[0]C[0]:R[${values.length}]C[${values[0].length}]`,
+        range: `${sheetName}!R[0]C[0]:R[${values.length}]C[${values[0].length}]`,
         resource: { values },
       };
-      sheets.spreadsheets.values.update(update1, (e, updateResponse) => {
-        handleError(e);
-        console.log(
-          `Later, you will need to share the sheet with the service account email`,
-        );
-        const sheetUrl = `https://docs.google.com/spreadsheets/d/${createResponse.data.spreadsheetId}/edit`;
-        console.log(`sheet url: ${sheetUrl}`);
-        opn(sheetUrl, { wait: false });
-        console.log("done");
-      });
-    });
-  });
+      await sheets.spreadsheets.values.update(updateRequest);
+    }
+
+    console.log(
+      `Later, you will need to share the sheet with the service account email`,
+    );
+    const sheetUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit`;
+    console.log(`sheet url: ${sheetUrl}`);
+    opn(sheetUrl, { wait: false });
+    console.log("done");
+  } catch (e) {
+    handleError(e);
+  }
 }
 
 await createSheet();
