@@ -15,14 +15,11 @@
 
 import * as fs from "node:fs/promises";
 import path from "node:path";
-import { exec } from "node:child_process";
-import { promisify } from "node:util";
 import { GoogleAuth } from "google-auth-library";
 import { google } from "googleapis";
 import dayjs from "dayjs";
 
 const today = dayjs(new Date()).format("YYYY-MMM-DD");
-const execP = promisify(exec);
 
 function handleError(e) {
   if (e) {
@@ -30,55 +27,6 @@ function handleError(e) {
     console.log(e.stack);
     process.exit(1);
   }
-}
-
-async function checkApplicationDefaultCreds() {
-  const adcFilePath = path.join(
-    process.env.HOME,
-    ".config/gcloud/application_default_credentials.json",
-  );
-  try {
-    // Attempt to get the file's statistics.
-    await fs.stat(adcFilePath);
-  } catch (error) {
-    if (error.code === "ENOENT") {
-      throw new Error(
-        `You must signin with "gcloud auth application-default login"`,
-      );
-    }
-    throw new Error(`Cannot read the Application Default Credentials.`);
-  }
-  const fileContent = await fs.readFile(adcFilePath, "utf8");
-  return JSON.parse(fileContent);
-}
-
-async function execCmd(command) {
-  try {
-    console.log(`Running command: ${command}`);
-    // Await the promise. On success, it resolves with { stdout, stderr }.
-    const { stdout, stderr } = await execP(command);
-    if (stderr) {
-      console.error(stderr);
-      throw new Error(stderr);
-    }
-    return stdout.trim();
-  } catch (error) {
-    // If the command fails (non-zero exit code), the promise rejects.
-    console.error("❌ An error occurred:");
-    console.error(error); // The error object contains stdout, stderr, and more.
-  }
-}
-
-async function signin() {
-  const command =
-    "gcloud auth application-default print-access-token " +
-    ' --scopes "https://www.googleapis.com/auth/spreadsheets,https://www.googleapis.com/auth/drive"';
-  return await execCmd(command);
-}
-
-async function defaultProject() {
-  const command = "gcloud config list --format 'value(core.project)'";
-  return await execCmd(command);
 }
 
 function formattingUpdate(spreadsheetId, tabName) {
@@ -122,20 +70,19 @@ function formattingUpdate(spreadsheetId, tabName) {
 
 async function createSheet() {
   try {
-    const creds = await checkApplicationDefaultCreds();
-    const accessToken = await signin();
-    const quotaProject = await defaultProject();
-    const auth = new GoogleAuth({});
-    auth.getRequestHeaders = () => ({
-      "x-goog-user-project": quotaProject,
-      Authorization: `Bearer ${accessToken}`,
+    // Authenticate using Application Default Credentials, with the right
+    // scopes. These scopes must have been previously approved.
+    const googleAuth = new GoogleAuth({
+      scopes: [
+        "https://www.googleapis.com/auth/spreadsheets",
+        "https://www.googleapis.com/auth/drive",
+      ],
     });
-
+    const auth = await googleAuth.getClient();
+    const sheets = google.sheets({ version: "v4", auth });
     const initialSheetData = JSON.parse(
       await fs.readFile("initial-sheet-data.json", "utf8"),
     );
-
-    const sheets = google.sheets({ version: "v4", auth });
     const tabnames = Object.keys(initialSheetData);
     var request = {
       resource: {
