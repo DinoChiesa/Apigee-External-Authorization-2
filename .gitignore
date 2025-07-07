@@ -5,6 +5,9 @@
 **/#*#
 **/#*.*#
 
+node_modules
+NOT_USED
+env-private.sh
 # dotnet things
 **/obj
 **/bin
