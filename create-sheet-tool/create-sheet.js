@@ -29,22 +29,23 @@ function handleError(e) {
   }
 }
 
-function formattingUpdate(spreadsheetId, tabName) {
-  let range = {
-    sheetId: tabName == "Rules" ? 0 : 1,
+function formatUpdate(spreadsheetId, tabName) {
+  let sheetId = tabName == "Rules" ? 0 : 1;
+  let headerRowRange = {
+    sheetId,
     startRowIndex: 0,
     endRowIndex: 1,
     startColumnIndex: 0,
-    endColumnIndex: tabName == "Rules" ? 4 : 2,
+    endColumnIndex: sheetId == 0 ? 4 : 2,
   };
-  let batch = {
+  let formattingChangesDescriptor = {
     spreadsheetId,
     resource: {
       requests: [
         {
           // add a bottom border to the header row
           updateBorders: {
-            range,
+            range: headerRowRange,
             bottom: {
               style: "SOLID",
               width: 2,
@@ -55,17 +56,32 @@ function formattingUpdate(spreadsheetId, tabName) {
         {
           // bold the header row
           repeatCell: {
-            range,
+            range: headerRowRange,
             cell: {
               userEnteredFormat: { textFormat: { bold: true } },
             },
             fields: "userEnteredFormat(textFormat)",
           },
         },
+        {
+          // change column width on one column, each sheet
+          updateDimensionProperties: {
+            range: {
+              sheetId,
+              dimension: "COLUMNS",
+              startIndex: sheetId == 0 ? 1 : 0, // (A=0, B=1, etc.)
+              endIndex: sheetId == 0 ? 2 : 1, // (A=0, B=1, etc.) (exclusive)
+            },
+            properties: {
+              pixelSize: sheetId == 0 ? 150 : 200,
+            },
+            fields: "pixelSize",
+          },
+        },
       ],
     },
   };
-  return batch;
+  return formattingChangesDescriptor;
 }
 
 async function createSheet() {
@@ -115,7 +131,7 @@ async function createSheet() {
       };
       await sheets.spreadsheets.values.update(updateRequest);
       await sheets.spreadsheets.batchUpdate(
-        formattingUpdate(spreadsheetId, tabname),
+        formatUpdate(spreadsheetId, tabname),
       );
     }
     console.log("\nOK\n\n");
